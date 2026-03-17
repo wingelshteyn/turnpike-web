@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Редактировать тип контакта{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Редактировать тип контакта</h1>
+  {% if message %}<p class="message">{{ message }}</p>{% endif %}
+
+  <form method="post" action="/contact-types/edit/{{ item['id'] }}" style="max-width: 600px; width: 100%;">
+    <label for="id">ID:</label>
+    <input id="id" value="{{ item['id'] }}" readonly>
+
+    <label for="code">Код (Code):</label>
+    <input id="code" name="code" value="{{ item.get('Code', '') or '' }}">
+
+    <label for="name">Наименование (Name):</label>
+    <input id="name" name="name" value="{{ item.get('Name', '') or '' }}">
+
+    <button type="submit" class="btn-accent">Сохранить</button>
+  </form>
+
+  <p class="back-to-list"><a href="/contact-types" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

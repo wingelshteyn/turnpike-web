@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Добавить улицу{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить улицу</h1>
+
+  <form method="post" action="/streets/add" style="max-width: 600px; width: 100%;">
+    <label for="city">Город:</label>
+    <select id="city" name="city" required>
+      <option value="" disabled selected>Выберите город</option>
+      {% for c in cities %}
+      <option value="{{ c['id'] }}">{{ c.get('Name', '—') or '—' }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="name">Наименование:</label>
+    <input id="name" name="name" required>
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/streets" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

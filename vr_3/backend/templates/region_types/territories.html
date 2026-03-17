@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Типы территорий{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Типы территорий</h1>
+  <div class="actions-block">
+    <div class="actions">
+      <a href="/region-types/add" class="btn btn-outline">Добавить новый тип</a>
+      <a href="/region-types/deleted" class="btn btn-outline">Удалённые типы</a>
+    </div>
+    <form method="get" action="/region-types" class="search-row">
+      <div class="search-input-wrap">
+        <input name="q" placeholder="Поиск..." value="{{ q or '' }}" autocomplete="off">
+      </div>
+      {% if q %}<a href="/region-types" class="btn btn-outline">Сбросить</a>{% endif %}
+    </form>
+  </div>
+  {% if territories %}
+  <table class="data-table" id="territories-table">
+    <thead>
+    <tr><th>ID</th><th>Brief</th><th>Name</th><th class="details-column">Создано</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% for t in territories %}
+    <tr>
+      <td>{{ t['id'] }}</td>
+      <td>{{ t.get('Brief', '—') or '—' }}</td>
+      <td>{{ t.get('Name', '—') or '—' }}</td>
+      <td class="details-column">{{ t.get('created', '—') or '—' }}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-outline btn-sm toggle-details-btn" type="button">Показать подробности</button>
+          <div class="action-menu">
+            <button class="btn-menu" type="button" title="Ещё действия">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="menu-content" onclick="event.stopPropagation()">
+              <a href="/region-types/edit/{{ t['id'] }}" class="menu-item">Редактировать</a>
+              <form method="post" action="/region-types/delete/{{ t['id'] }}" onsubmit="return confirm('Удалить тип территории?')" class="inline">
+                <button class="menu-item btn-delete-small" type="submit">Удалить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pagination.html" %}
+  {% else %}
+  <p>Нет доступных типов территорий.</p>
+  {% endif %}
+</div>
+{% endblock %}

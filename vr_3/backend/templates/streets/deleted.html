@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Удалённые улицы{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Удалённые улицы</h1>
+  <div class="actions"><a href="/streets" class="btn btn-outline">← Назад</a></div>
+
+  <table class="data-table" id="streets-table">
+    <thead>
+    <tr><th>ID</th><th>Город</th><th>Наименование</th><th>Дата удаления</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% if not streets %}
+    <tr><td colspan="5">Нет удалённых улиц</td></tr>
+    {% endif %}
+    {% for s in streets %}
+    <tr>
+      <td>{{ s['id'] }}</td>
+      <td>
+        {% for c in cities %}
+          {% if c['id']|string == (s.get('City') or '')|string %}{{ c.get('Name', '—') or '—' }}{% endif %}
+        {% endfor %}
+      </td>
+      <td>{{ s.get('name') or s.get('Name', '—') or '—' }}</td>
+      <td>{{ s.get('deleted', '—') or '—' }}</td>
+      <td>
+        <form method="post" action="/streets/restore/{{ s['id'] }}" onsubmit="return confirm('Восстановить?')" class="inline">
+          <button class="btn btn-outline btn-sm" type="submit">Восстановить</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

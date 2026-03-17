@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Добавить регион{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить регион</h1>
+
+  <form method="post" action="/regions/add" style="max-width: 600px; width: 100%;">
+    <label for="partner">Партнёр:</label>
+    <select id="partner" name="partner" required>
+      {% for p in partners %}
+      <option value="{{ p['id'] }}">{{ p.get('Name', '—') or '—' }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="region_type">Тип территории:</label>
+    <select id="region_type" name="region_type" required>
+      {% for rt in region_types %}
+      <option value="{{ rt['id'] }}">{{ rt.get('Name', '—') or '—' }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="name">Наименование:</label>
+    <input id="name" name="name" required>
+
+    <label for="place">Место:</label>
+    <input id="place" name="place" required>
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/regions" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Добавить тип партнёра{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить тип партнёра</h1>
+
+  <form method="post" action="/add" style="max-width: 600px; width: 100%;">
+    <label for="type">Тип (Brief):</label>
+    <input id="type" name="type" required>
+
+    <label for="name">Наименование (Name):</label>
+    <input id="name" name="name" required>
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

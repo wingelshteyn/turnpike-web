@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Редактировать партнёра{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Редактировать партнёра</h1>
+  {% if message %}<p class="message">{{ message }}</p>{% endif %}
+
+  <form method="post" action="/partners/edit/{{ partner['id'] }}" style="max-width: 600px; width: 100%;">
+    <label for="partner_type">Тип партнёра:</label>
+    <select id="partner_type" name="partner_type" required>
+      {% for pt in partner_types %}
+      <option value="{{ pt['id'] }}" {% if pt['id']|string == (partner.get('PartnerType') or partner.get('f_PartnerType') or '')|string %}selected{% endif %}>{{ pt.get('Name', '—') or '—' }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="name">Наименование:</label>
+    <input id="name" name="name" value="{{ partner.get('Name', '') or '' }}" required>
+
+    <button type="submit" class="btn-accent">Сохранить</button>
+  </form>
+
+  <p class="back-to-list"><a href="/partners" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

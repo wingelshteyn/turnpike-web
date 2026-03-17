@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Регионы{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Регионы</h1>
+  <div class="actions-block">
+    <div class="actions">
+      <a href="/regions/add" class="btn btn-outline">Добавить</a>
+      <a href="/regions/deleted" class="btn btn-outline">Показать удалённые</a>
+    </div>
+    <form method="get" action="/regions" class="search-row">
+      <div class="search-input-wrap">
+        <input name="q" placeholder="Поиск..." value="{{ q or '' }}" autocomplete="off">
+      </div>
+      {% if q %}<a href="/regions" class="btn btn-outline">Сбросить</a>{% endif %}
+    </form>
+  </div>
+  <table class="data-table" id="regions-table">
+    <thead>
+    <tr><th>ID</th><th>Партнёр</th><th>Тип территории</th><th>Наименование</th><th class="details-column">Место</th><th class="details-column">Создано</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% for r in regions %}
+    <tr>
+      <td>{{ r['id'] }}</td>
+      <td>{% for p in partners %}{% if p['id']|string == (r.get('Partner') or '')|string %}{{ p.get('Name', '—') or '—' }}{% endif %}{% endfor %}</td>
+      <td>{% for rt in region_types %}{% if rt['id']|string == (r.get('RegionType') or '')|string %}{{ rt.get('Name', '—') or '—' }}{% endif %}{% endfor %}</td>
+      <td>{{ r.get('Name', '—') or '—' }}</td>
+      <td class="details-column">{{ r.get('Place', '—') or '—' }}</td>
+      <td class="details-column">{{ r.get('created', '—') or '—' }}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-outline btn-sm toggle-details-btn" type="button">Показать подробности</button>
+          <div class="action-menu">
+            <button class="btn-menu" type="button">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="menu-content" onclick="event.stopPropagation()">
+              <a href="/regions/edit/{{ r['id'] }}" class="menu-item">Редактировать</a>
+              <form method="post" action="/regions/delete/{{ r['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
+                <button class="menu-item btn-delete-small" type="submit">Удалить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pagination.html" %}
+</div>
+{% endblock %}

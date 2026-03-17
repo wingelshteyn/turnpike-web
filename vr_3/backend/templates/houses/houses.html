@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Дома{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Дома</h1>
+
+  <div class="actions-block">
+    <div class="actions">
+      <a href="/houses/add" class="btn btn-outline">Добавить</a>
+      <a href="/houses/deleted" class="btn btn-outline">Показать удалённые</a>
+    </div>
+    <form method="get" action="/houses" class="search-row">
+      <div class="search-input-wrap">
+        <input name="q" placeholder="Поиск..." value="{{ q or '' }}" autocomplete="off">
+      </div>
+      {% if q %}<a href="/houses" class="btn btn-outline">Сбросить</a>{% endif %}
+    </form>
+  </div>
+
+  <table class="data-table" id="houses-table">
+    <thead>
+    <tr><th>ID</th><th>Улица</th><th>Номер</th><th class="details-column">Создано</th><th class="details-column">Обновлено</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% if not houses %}
+    <tr><td colspan="6">Нет данных о домах</td></tr>
+    {% endif %}
+    {% for h in houses %}
+    <tr>
+      <td>{{ h['id'] }}</td>
+      <td>{{ street_names.get((h.get('Street') or h.get('street') or h.get('f_Street'))|string, '—') }}</td>
+      <td>{{ h.get('Number') or h.get('number', '—') or '—' }}</td>
+      <td class="details-column">{{ h.get('created', '—') or '—' }}</td>
+      <td class="details-column">{{ h.get('updated', '—') or '—' }}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-outline btn-sm toggle-details-btn" type="button">Показать подробности</button>
+          <div class="action-menu">
+            <button class="btn-menu" type="button">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="menu-content" onclick="event.stopPropagation()">
+              <a href="/houses/edit/{{ h['id'] }}" class="menu-item">Редактировать</a>
+              <form method="post" action="/houses/delete/{{ h['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
+                <button class="menu-item btn-delete-small" type="submit">Удалить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pagination.html" %}
+</div>
+{% endblock %}

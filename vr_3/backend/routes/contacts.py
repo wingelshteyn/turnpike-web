@@ -1,0 +1,118 @@
+"""Маршруты для контактов (Contact)."""
+
+import logging
+from typing import Optional
+
+from fastapi import APIRouter, Form, HTTPException, Request, status
+from fastapi.responses import HTMLResponse, RedirectResponse
+
+from api import ContactAPI, ClientAPI, ContactTypeAPI
+from dependencies import templates
+from helpers import fetch_split, filter_by_query, paginate
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/contacts", tags=["contacts"])
+
+
+@router.get("", response_class=HTMLResponse)
+async def contacts_list(request: Request, q: str = "", page: int = 1):
+    async with ContactAPI() as api:
+        raw = await api.list(include_deleted=False)
+    filtered = filter_by_query(raw, q, ["id", "Client", "ContactType", "Contact", "created"])
+    items, total, total_pages = paginate(filtered, page)
+    return templates.TemplateResponse(
+        "contacts/index.html",
+        {"request": request, "items": items, "q": q, "page": page, "total_pages": total_pages, "base_url": "/contacts"},
+    )
+
+
+@router.get("/deleted", response_class=HTMLResponse)
+async def deleted_contacts(request: Request):
+    _, deleted = await fetch_split(ContactAPI)
+    return templates.TemplateResponse(
+        "contacts/deleted.html", {"request": request, "items": deleted},
+    )
+
+
+@router.get("/add", response_class=HTMLResponse)
+async def add_form(request: Request):
+    async with ClientAPI() as api:
+        clients = await api.case()
+    async with ContactTypeAPI() as api:
+        contact_types = await api.case()
+    return templates.TemplateResponse("contacts/add.html", {
+        "request": request,
+        "clients": clients,
+        "contact_types": contact_types,
+    })
+
+
+@router.post("/add")
+async def add_contact(
+    client_id: int = Form(...),
+    contact_type_id: int = Form(...),
+    contact: str = Form(""),
+):
+    async with ContactAPI() as api:
+        await api.create(client_id=client_id, contact_type_id=contact_type_id, contact=contact)
+    logger.info("Создан контакт для клиента %s", client_id)
+    return RedirectResponse(url="/contacts", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/edit/{record_id:int}", response_class=HTMLResponse)
+async def edit_form(request: Request, record_id: int):
+    async with ContactAPI() as api:
+        item = await api.read(record_id)
+    async with ClientAPI() as api:
+        clients = await api.case()
+    async with ContactTypeAPI() as api:
+        contact_types = await api.case()
+    return templates.TemplateResponse("contacts/edit.html", {
+        "request": request,
+        "item": item,
+        "clients": clients,
+        "contact_types": contact_types,
+    })
+
+
+@router.post("/edit/{record_id:int}")
+async def update_contact(
+    request: Request, record_id: int,
+    client_id: int = Form(...),
+    contact_type_id: int = Form(...),
+    contact: str = Form(""),
+):
+    async with ContactAPI() as api:
+        item = await api.update(record_id, client_id=client_id, contact_type_id=contact_type_id, contact=contact)
+    async with ClientAPI() as capi:
+        clients = await capi.case()
+    async with ContactTypeAPI() as ctapi:
+        contact_types = await ctapi.case()
+    logger.info("Контакт %s обновлён", record_id)
+    return templates.TemplateResponse("contacts/edit.html", {
+        "request": request,
+        "item": item,
+        "clients": clients,
+        "contact_types": contact_types,
+        "message": "Запись успешно обновлена",
+    })
+
+
+@router.post("/delete/{record_id:int}")
+async def delete_contact(record_id: int):
+    async with ContactAPI() as api:
+        record = await api.read(record_id)
+        if record.get("deleted"):
+            raise HTTPException(status_code=400, detail="Запись уже удалена")
+        await api.delete(record_id)
+    logger.info("Удалён контакт %s", record_id)
+    return RedirectResponse(url="/contacts", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/restore/{record_id:int}")
+async def restore_contact(record_id: int):
+    async with ContactAPI() as api:
+        await api.restore(record_id)
+    logger.info("Восстановлен контакт %s", record_id)
+    return RedirectResponse(url="/contacts", status_code=status.HTTP_303_SEE_OTHER)

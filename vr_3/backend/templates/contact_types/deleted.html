@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Удалённые типы контактов{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Удалённые типы контактов</h1>
+  <a href="/contact-types" class="back-link">← Назад</a>
+
+  <table class="data-table">
+    <thead>
+    <tr><th>ID</th><th>Код</th><th>Наименование</th><th>Дата удаления</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% for c in items %}
+    <tr>
+      <td>{{ c['id'] }}</td>
+      <td>{{ c.get('Code', '—') or '—' }}</td>
+      <td>{{ c.get('Name', '—') or '—' }}</td>
+      <td>{{ c.get('deleted', '—') or '—' }}</td>
+      <td>
+        <form method="post" action="/contact-types/restore/{{ c['id'] }}" class="inline">
+          <button type="submit" class="btn btn-restore">Восстановить</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Нет удалённых типов контактов</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

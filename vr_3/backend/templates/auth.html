@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Авторизация</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <span class="auth-icon-large">🔐</span>
+      <h1 class="auth-title">Авторизация</h1>
+      <p class="auth-subtitle">Войдите для доступа к системе</p>
+    </div>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form class="auth-form" method="post" action="/auth">
+      <div>
+        <label for="username">Логин</label>
+        <input id="username" name="username" type="text" placeholder="Введите логин" required>
+      </div>
+      <div>
+        <label for="password">Пароль</label>
+        <input id="password" name="password" type="password" placeholder="Введите пароль" required>
+      </div>
+      <button type="submit" class="btn-accent btn-block">Войти</button>
+    </form>
+  </div>
+</div>
+
+<!-- Background -->
+<div class="bg-wrapper">
+  <div class="background-animation">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="orb orb-5"></div>
+  </div>
+  <div class="background-lines"></div>
+  <canvas class="background-particles" id="particles"></canvas>
+</div>
+<script src="/static/js/particles.js"></script>
+
+</body>
+</html>

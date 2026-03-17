@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Добавить тип территории{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить тип территории</h1>
+
+  <form method="post" action="/region-types/add" style="max-width: 600px; width: 100%;">
+    <label for="type">Краткое название (Brief):</label>
+    <input type="text" name="type" id="type" required>
+
+    <label for="name">Полное название (Name):</label>
+    <input type="text" name="name" id="name" required>
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/region-types" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

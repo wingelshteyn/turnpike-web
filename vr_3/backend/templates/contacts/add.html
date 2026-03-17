@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Добавить контакт{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить контакт</h1>
+
+  <form method="post" action="/contacts/add" style="max-width: 600px; width: 100%;">
+    <label for="client_id">Клиент:</label>
+    <select id="client_id" name="client_id" required>
+      <option value="">— Выберите клиента —</option>
+      {% for cl in clients %}
+      <option value="{{ cl['id'] }}">{{ cl.get('name', '') or cl['id'] }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="contact_type_id">Тип контакта:</label>
+    <select id="contact_type_id" name="contact_type_id" required>
+      <option value="">— Выберите тип —</option>
+      {% for ct in contact_types %}
+      <option value="{{ ct['id'] }}">{{ ct.get('name', '') or ct['id'] }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="contact">Контакт:</label>
+    <input id="contact" name="contact">
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/contacts" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

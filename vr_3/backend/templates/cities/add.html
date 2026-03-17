@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Добавить город{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить город</h1>
+
+  <form method="post" action="/cities/add" style="max-width: 600px; width: 100%;">
+    <label for="name">Наименование:</label>
+    <input id="name" name="name" required>
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/cities" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

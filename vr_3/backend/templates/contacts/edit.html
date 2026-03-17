@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Редактировать контакт{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Редактировать контакт</h1>
+  {% if message %}<p class="message">{{ message }}</p>{% endif %}
+
+  <form method="post" action="/contacts/edit/{{ item['id'] }}" style="max-width: 600px; width: 100%;">
+    <label for="id">ID:</label>
+    <input id="id" value="{{ item['id'] }}" readonly>
+
+    <label for="client_id">Клиент:</label>
+    <select id="client_id" name="client_id" required>
+      <option value="">— Выберите клиента —</option>
+      {% for cl in clients %}
+      <option value="{{ cl['id'] }}" {% if cl['id'] == item.get('Client') %}selected{% endif %}>{{ cl.get('name', '') or cl['id'] }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="contact_type_id">Тип контакта:</label>
+    <select id="contact_type_id" name="contact_type_id" required>
+      <option value="">— Выберите тип —</option>
+      {% for ct in contact_types %}
+      <option value="{{ ct['id'] }}" {% if ct['id'] == item.get('ContactType') %}selected{% endif %}>{{ ct.get('name', '') or ct['id'] }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="contact">Контакт:</label>
+    <input id="contact" name="contact" value="{{ item.get('Contact', '') or '' }}">
+
+    <button type="submit" class="btn-accent">Сохранить</button>
+  </form>
+
+  <p class="back-to-list"><a href="/contacts" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

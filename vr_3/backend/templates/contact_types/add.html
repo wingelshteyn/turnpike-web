@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Добавить тип контакта{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить тип контакта</h1>
+
+  <form method="post" action="/contact-types/add" style="max-width: 600px; width: 100%;">
+    <label for="code">Код (Code):</label>
+    <input id="code" name="code">
+
+    <label for="name">Наименование (Name):</label>
+    <input id="name" name="name">
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/contact-types" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

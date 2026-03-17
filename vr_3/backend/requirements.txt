@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+httpx
+jinja2
+python-multipart
+opencv-python-headless>=4.8.0

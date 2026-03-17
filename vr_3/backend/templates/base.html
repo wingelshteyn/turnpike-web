@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Web Application{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css?v=5">
+</head>
+<body>
+
+<!-- Sidebar -->
+{% set username = request.cookies.get('username') %}
+<div class="sidebar">
+  <div class="sidebar-content">
+    {% if username %}
+    <div class="sidebar-user">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9.24 2 7 4.24 7 7C7 9.76 9.24 12 12 12C14.76 12 17 9.76 17 7C17 4.24 14.76 2 12 2ZM12 14C8.69 14 6 16.69 6 20V22H18V20C18 16.69 15.31 14 12 14Z" fill="currentColor"/></svg>
+      <span class="sidebar-user-name">{{ username }}</span>
+    </div>
+    {% else %}
+    <a href="/auth" class="auth-icon" title="Авторизация">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9.24 2 7 4.24 7 7C7 9.76 9.24 12 12 12C14.76 12 17 9.76 17 7C17 4.24 14.76 2 12 2ZM12 14C8.69 14 6 16.69 6 20V22H18V20C18 16.69 15.31 14 12 14Z" fill="currentColor"/></svg>
+    </a>
+    {% endif %}
+    <hr class="sidebar-divider">
+    <a href="/cameras" class="sidebar-section-link">Камеры</a>
+    <hr class="sidebar-divider">
+    <span class="sidebar-icon">Справочники</span>
+    <a href="/">Типы партнёров</a>
+    <a href="/region-types">Типы территорий</a>
+    <a href="/partners">Партнёры</a>
+    <a href="/regions">Регионы</a>
+    <a href="/cities">Города</a>
+    <a href="/streets">Улицы</a>
+    <a href="/houses">Дома</a>
+    <a href="/contact-types">Типы контактов</a>
+    <a href="/clients">Клиенты</a>
+    <a href="/contacts">Контакты</a>
+    {% if username %}
+    <hr class="sidebar-divider">
+    <a href="/logout" class="sidebar-logout">Выйти</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Content -->
+{% block content %}{% endblock %}
+
+<!-- Background -->
+<div class="bg-wrapper">
+  <div class="background-animation">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="orb orb-5"></div>
+  </div>
+  <div class="background-lines"></div>
+  <canvas class="background-particles" id="particles"></canvas>
+</div>
+
+<script src="/static/js/scripts.js"></script>
+<script src="/static/js/particles.js"></script>
+</body>
+</html>

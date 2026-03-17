@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Добавить клиента{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить клиента</h1>
+
+  <form method="post" action="/clients/add" style="max-width: 600px; width: 100%;">
+    <label for="name">Имя (Name):</label>
+    <input id="name" name="name">
+
+    <label for="place">Место (Place):</label>
+    <input id="place" name="place">
+
+    <label for="house">Дом (House ID):</label>
+    <input id="house" name="house" type="number">
+
+    <label for="apart">Квартира (Apart):</label>
+    <input id="apart" name="apart">
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/clients" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

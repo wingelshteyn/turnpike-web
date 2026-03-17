@@ -1,0 +1,27 @@
+{# Пагинация: base_url, page, total_pages, q (опционально) #}
+{% if total_pages > 1 %}
+<nav class="pagination" aria-label="Навигация по страницам">
+  <div class="pagination-inner">
+    <a class="pagination-arrow pagination-prev {% if page <= 1 %}disabled{% endif %}"
+       href="{% if page > 1 %}{{ base_url }}?{% if q %}q={{ q | urlencode }}&{% endif %}page={{ page - 1 }}{% else %}#{% endif %}"
+       aria-label="Предыдущая страница"
+       {% if page <= 1 %}tabindex="-1"{% endif %}>
+      ‹
+    </a>
+    <ul class="pagination-numbers">
+      {% for p in range(1, total_pages + 1) %}
+      <li>
+        <a class="pagination-num {% if p == page %}active{% endif %}"
+           href="{{ base_url }}?{% if q %}q={{ q | urlencode }}&{% endif %}page={{ p }}">{{ p }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+    <a class="pagination-arrow pagination-next {% if page >= total_pages %}disabled{% endif %}"
+       href="{% if page < total_pages %}{{ base_url }}?{% if q %}q={{ q | urlencode }}&{% endif %}page={{ page + 1 }}{% else %}#{% endif %}"
+       aria-label="Следующая страница"
+       {% if page >= total_pages %}tabindex="-1"{% endif %}>
+      ›
+    </a>
+  </div>
+</nav>
+{% endif %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Удалённые дома{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Удалённые дома</h1>
+  <a href="/houses" class="back-link">← Назад</a>
+
+  <table class="data-table">
+    <thead>
+    <tr><th>ID</th><th>Улица</th><th>Номер</th><th>Дата удаления</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% for h in houses %}
+    <tr>
+      <td>{{ h['id'] }}</td>
+      <td>{{ street_names.get((h.get('Street') or h.get('street') or h.get('f_Street'))|string, '—') }}</td>
+      <td>{{ h.get('Number') or h.get('number', '—') or '—' }}</td>
+      <td>{{ h.get('deleted', '—') or '—' }}</td>
+      <td>
+        <form method="post" action="/houses/restore/{{ h['id'] }}" class="inline">
+          <button type="submit" class="btn btn-restore">Восстановить</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Нет удалённых домов</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

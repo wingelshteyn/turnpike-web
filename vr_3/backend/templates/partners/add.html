@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Добавить партнёра{% endblock %}
+{% block content %}
+<div class="container-center">
+  <h1>Добавить партнёра</h1>
+
+  <form method="post" action="/partners/add" style="max-width: 600px; width: 100%;">
+    <label for="partner_type">Тип партнёра:</label>
+    <select id="partner_type" name="partner_type" required>
+      {% for pt in partner_types %}
+      <option value="{{ pt['id'] }}">{{ pt.get('Name', '—') or '—' }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="name">Наименование:</label>
+    <input id="name" name="name" required>
+
+    <button type="submit" class="btn-accent">Создать</button>
+  </form>
+
+  <p class="back-to-list"><a href="/partners" class="btn btn-outline">← Назад к списку</a></p>
+</div>
+{% endblock %}

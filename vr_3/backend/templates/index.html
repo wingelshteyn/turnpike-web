@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Типы партнёров{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Типы партнёров</h1>
+
+  <div class="actions-block">
+    <div class="actions">
+      <a href="/add" class="btn btn-outline">Добавить</a>
+      <a href="/deleted" class="btn btn-outline">Показать удалённые</a>
+    </div>
+    <form method="get" action="/" class="search-row">
+      <div class="search-input-wrap">
+        <input name="q" placeholder="Поиск..." value="{{ q or '' }}" autocomplete="off">
+      </div>
+      {% if q %}<a href="/" class="btn btn-outline">Сбросить</a>{% endif %}
+    </form>
+  </div>
+
+  <table class="data-table" id="partners-table">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Тип</th>
+      <th>Наименование</th>
+      <th class="details-column">Город</th>
+      <th class="details-column">Код</th>
+      <th class="details-column">Создано</th>
+      <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for p in partners %}
+    <tr>
+      <td>{{ p['id'] }}</td>
+      <td>{{ p.get('Brief', '—') or '—' }}</td>
+      <td>{{ p.get('Name', '—') or '—' }}</td>
+      <td class="details-column">{{ p.get('city', '—') or '—' }}</td>
+      <td class="details-column">{{ p.get('code', '—') or '—' }}</td>
+      <td class="details-column">{{ p.get('created', '—') or '—' }}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-outline btn-sm toggle-details-btn" type="button">Показать подробности</button>
+          <div class="action-menu">
+            <button class="btn-menu" type="button" title="Ещё действия">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="menu-content" onclick="event.stopPropagation()">
+              <a href="/edit/{{ p['id'] }}" class="menu-item">
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75l11-11.04-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                Редактировать
+              </a>
+              <form method="post" action="/delete/{{ p['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
+                <button class="menu-item btn-delete-small" type="submit">
+                  <svg viewBox="0 0 24 24"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-4.5l-1-1z"/></svg>
+                  Удалить
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pagination.html" %}
+</div>
+{% endblock %}

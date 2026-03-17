@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+{% block title %}Камеры{% endblock %}
+
+{% block content %}
+<div class="cameras-page container">
+    <h1>Камеры</h1>
+
+    <!-- Toolbar -->
+    <div class="cam-toolbar">
+        <div class="cam-toolbar-group">
+            <span class="cam-toolbar-label">Раскладка:</span>
+            <button class="cam-layout-btn active" data-layout="1x1" title="1 камера (клавиша 1)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+                1×1
+            </button>
+            <button class="cam-layout-btn" data-layout="2x2" title="4 камеры (клавиша 2)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+                2×2
+            </button>
+            <button class="cam-layout-btn" data-layout="2x3" title="6 камер (клавиша 3)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1"/><rect x="6" y="1" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1"/><rect x="11" y="1" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1"/><rect x="1" y="9" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1"/><rect x="6" y="9" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1"/><rect x="11" y="9" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1"/></svg>
+                2×3
+            </button>
+            <button class="cam-layout-btn" data-layout="3x3" title="9 камер (клавиша 4)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="6.25" y="1" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="11.5" y="1" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="1" y="6.25" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="6.25" y="6.25" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="11.5" y="6.25" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="1" y="11.5" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="6.25" y="11.5" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="11.5" y="11.5" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>
+                3×3
+            </button>
+        </div>
+
+        <div class="cam-toolbar-sep"></div>
+
+        <div class="cam-toolbar-group">
+            <span class="cam-toolbar-label">Обновление:</span>
+            <select id="camRefreshRate">
+                <option value="0">Выкл</option>
+                <option value="5000">5 сек</option>
+                <option value="10000" selected>10 сек</option>
+                <option value="20000">20 сек</option>
+                <option value="30000">30 сек</option>
+            </select>
+        </div>
+
+        <div class="cam-toolbar-group">
+            <button id="camSyncBtn" class="btn btn-outline btn-sm" title="Обновить все камеры сейчас">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                Обновить все
+            </button>
+        </div>
+
+        <div class="cam-toolbar-status" id="camStatus"></div>
+    </div>
+
+    <!-- Camera Grid -->
+    <div id="cameraGrid" class="cam-grid layout-1x1"></div>
+
+    <!-- Single-view controls (placed outside the grid) -->
+    <div id="camControls" class="cam-single-controls" style="display:none;">
+        <button class="btn btn-accent cam-btn-barrier" title="Открыть шлагбаум">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="13" width="4" height="9" rx="1"/><path d="M5 13V4a1 1 0 011-1h12"/><path d="M9 13V8"/><circle cx="19" cy="4" r="2"/></svg>
+            Открыть шлагбаум
+        </button>
+        <button class="btn btn-outline cam-btn-cancel" title="Вернуться к сетке (Esc)">
+            Отмена
+        </button>
+    </div>
+
+    <!-- Barrier Log Console (separate window) -->
+    <div class="barrier-log-window">
+        <div class="barrier-log-header">
+            <div class="barrier-log-title">
+                <span class="barrier-log-dot"></span>
+                <span class="barrier-log-dot"></span>
+                <span class="barrier-log-dot"></span>
+                <span class="barrier-log-label">Журнал шлагбаумов</span>
+            </div>
+            <button id="barrierLogClear" class="barrier-log-clear-btn" title="Очистить">Очистить</button>
+        </div>
+        <div class="barrier-log-console" id="barrierLogBody">
+            <div class="barrier-log-empty" id="barrierLogEmpty">&gt; Нет записей</div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var cameras = {{ cameras | tojson }};
+    var grid = document.getElementById('cameraGrid');
+    var refreshSelect = document.getElementById('camRefreshRate');
+    var syncBtn = document.getElementById('camSyncBtn');
+    var statusEl = document.getElementById('camStatus');
+    var controlsEl = document.getElementById('camControls');
+
+    var currentLayout = '1x1';
+    var refreshTimer = null;
+    var refreshRate = 10000;
+    var singleCamId = null;
+    var visibleCells = new Set();
+    var refreshInFlight = false;
+
+    var LAYOUTS = {
+        '1x1': 1,
+        '2x2': 4,
+        '2x3': 6,
+        '3x3': 9
+    };
+
+    // ─── Grid building ──────────────────────────────────────────────────
+
+    function buildGrid() {
+        cleanupStreams();
+        grid.innerHTML = '';
+        var slots = LAYOUTS[currentLayout];
+
+        for (var i = 0; i < slots; i++) {
+            var cam = cameras[i] || null;
+            var cell = document.createElement('div');
+            cell.className = 'cam-cell';
+            cell.dataset.slot = i;
+
+            if (cam) {
+                cell.dataset.camId = cam.id;
+                cell.innerHTML =
+                    '<div class="cam-cell-header">' +
+                        '<span class="cam-cell-name">' + escHtml(cam.name) + '</span>' +
+                        '<div class="cam-cell-actions">' +
+                            '<button class="cam-cell-btn cam-btn-expand" title="Развернуть">' +
+                                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="cam-cell-body">' +
+                        '<img class="cam-snapshot" src="/cameras/api/' + cam.id + '/snapshot?t=' + Date.now() + '" alt="' + escHtml(cam.name) + '" loading="lazy" decoding="async">' +
+                        '<div class="cam-loading"><div class="cam-spinner"></div></div>' +
+                        '<div class="cam-error-overlay"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/><line x1="3" y1="3" x2="21" y2="21"/></svg><span>Камера недоступна</span></div>' +
+                    '</div>';
+
+                setupCellHandlers(cell, cam);
+            } else {
+                cell.classList.add('cam-cell-empty');
+                cell.innerHTML =
+                    '<div class="cam-cell-body cam-empty-body">' +
+                        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.3">' +
+                            '<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>' +
+                        '</svg>' +
+                        '<span>Нет камеры</span>' +
+                    '</div>';
+            }
+            grid.appendChild(cell);
+        }
+
+        setupVisibilityObserver();
+        startRefresh();
+    }
+
+    function setupCellHandlers(cell, cam) {
+        var img = cell.querySelector('.cam-snapshot');
+        var loadingEl = cell.querySelector('.cam-loading');
+        var errorEl = cell.querySelector('.cam-error-overlay');
+
+        img.addEventListener('load', function () {
+            loadingEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            cell.classList.add('loaded');
+        });
+        img.addEventListener('error', function () {
+            loadingEl.style.display = 'none';
+            errorEl.style.display = 'flex';
+        });
+
+        cell.querySelector('.cam-btn-expand').addEventListener('click', function (e) {
+            e.stopPropagation();
+            enterSingleView(cam.id);
+        });
+
+        cell.addEventListener('dblclick', function () {
+            enterSingleView(cam.id);
+        });
+    }
+
+    // ─── Single / Multi view ────────────────────────────────────────────
+
+    function enterSingleView(camId) {
+        if (singleCamId === camId) {
+            exitSingleView();
+            return;
+        }
+        singleCamId = camId;
+        stopRefresh();
+        cleanupStreams();
+
+        var cam = cameras.find(function (c) { return c.id === camId; });
+        if (!cam) return;
+
+        grid.className = 'cam-grid layout-1x1 single-mode';
+        grid.innerHTML = '';
+
+        var cell = document.createElement('div');
+        cell.className = 'cam-cell cam-cell-single';
+        cell.dataset.camId = cam.id;
+
+        var navHtml = '';
+        if (cameras.length > 1) {
+            navHtml =
+                '<button class="cam-cell-btn cam-btn-prev" title="Предыдущая камера (←)">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>' +
+                '</button>' +
+                '<button class="cam-cell-btn cam-btn-next" title="Следующая камера (→)">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>' +
+                '</button>';
+        }
+
+        cell.innerHTML =
+            '<div class="cam-cell-header cam-cell-header-visible">' +
+                '<span class="cam-cell-name">' + escHtml(cam.name) + ' — MJPEG поток</span>' +
+                '<div class="cam-cell-actions">' +
+                    navHtml +
+                    '<button class="cam-cell-btn cam-btn-back" title="Назад к сетке (Esc)">' +
+                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="cam-cell-body">' +
+                '<img class="cam-stream-img" src="/cameras/api/' + cam.id + '/stream" alt="' + escHtml(cam.name) + '">' +
+                '<div class="cam-loading"><div class="cam-spinner"></div></div>' +
+            '</div>';
+
+        var streamImg = cell.querySelector('.cam-stream-img');
+        var sLoadingEl = cell.querySelector('.cam-loading');
+        streamImg.addEventListener('load', function () {
+            sLoadingEl.style.display = 'none';
+            cell.classList.add('loaded');
+        });
+        streamImg.addEventListener('error', function () {
+            sLoadingEl.innerHTML = '<div class="cam-error-overlay" style="display:flex"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/><line x1="3" y1="3" x2="21" y2="21"/></svg><span>Поток недоступен</span></div>';
+        });
+
+        cell.querySelector('.cam-btn-back').addEventListener('click', function () {
+            exitSingleView();
+        });
+
+        if (cameras.length > 1) {
+            cell.querySelector('.cam-btn-prev').addEventListener('click', function () { navigateCamera(-1); });
+            cell.querySelector('.cam-btn-next').addEventListener('click', function () { navigateCamera(1); });
+        }
+
+        grid.appendChild(cell);
+        controlsEl.style.display = 'flex';
+        updateStatus('Потоковое вещание: ' + cam.name);
+    }
+
+    function exitSingleView() {
+        singleCamId = null;
+        controlsEl.style.display = 'none';
+        setLayout(currentLayout);
+        updateStatus('');
+    }
+
+    function navigateCamera(direction) {
+        if (!singleCamId || cameras.length < 2) return;
+        var idx = cameras.findIndex(function (c) { return c.id === singleCamId; });
+        if (idx < 0) return;
+        idx = (idx + direction + cameras.length) % cameras.length;
+        cleanupStreams();
+        enterSingleView(cameras[idx].id);
+    }
+
+    // ─── Snapshot refresh (optimized) ───────────────────────────────────
+
+    function refreshSnapshots() {
+        if (singleCamId || refreshInFlight) return;
+        refreshInFlight = true;
+
+        var cells = Array.prototype.slice.call(
+            grid.querySelectorAll('.cam-cell[data-cam-id]')
+        ).filter(function (cell) {
+            return visibleCells.has(cell) && cell.querySelector('.cam-snapshot');
+        });
+
+        if (cells.length === 0) { refreshInFlight = false; return; }
+        var ts = Date.now();
+        var pending = cells.length;
+
+        function done() {
+            pending--;
+            if (pending <= 0) {
+                refreshInFlight = false;
+                updateStatus('Обновлено: ' + new Date().toLocaleTimeString('ru-RU'));
+            }
+        }
+
+        cells.forEach(function (cell, idx) {
+            setTimeout(function () {
+                var img = cell.querySelector('.cam-snapshot');
+                if (!img) { done(); return; }
+                img.onload = function () { done(); };
+                img.onerror = function () { done(); };
+                img.src = '/cameras/api/' + cell.dataset.camId + '/snapshot?t=' + ts;
+            }, idx * 150);
+        });
+    }
+
+    function startRefresh() {
+        stopRefresh();
+        if (refreshRate > 0 && !singleCamId) {
+            refreshTimer = setInterval(refreshSnapshots, refreshRate);
+        }
+    }
+
+    function stopRefresh() {
+        if (refreshTimer) {
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+        }
+    }
+
+    // ─── Lazy visibility tracking ───────────────────────────────────────
+
+    function setupVisibilityObserver() {
+        visibleCells.clear();
+
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    visibleCells.add(entry.target);
+                } else {
+                    visibleCells.delete(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        grid.querySelectorAll('.cam-cell[data-cam-id]').forEach(function (cell) {
+            observer.observe(cell);
+            visibleCells.add(cell);
+        });
+    }
+
+    // ─── Stream cleanup ─────────────────────────────────────────────────
+
+    function cleanupStreams() {
+        grid.querySelectorAll('.cam-stream-img').forEach(function (img) {
+            img.src = '';
+            img.remove();
+        });
+    }
+
+    // ─── Layout switching ───────────────────────────────────────────────
+
+    function setLayout(layout) {
+        currentLayout = layout;
+        singleCamId = null;
+        grid.className = 'cam-grid layout-' + layout;
+
+        document.querySelectorAll('.cam-layout-btn').forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.layout === layout);
+        });
+
+        buildGrid();
+    }
+
+    // ─── Utilities ──────────────────────────────────────────────────────
+
+    function escHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function updateStatus(text) {
+        statusEl.textContent = text;
+    }
+
+    // ─── Event listeners ────────────────────────────────────────────────
+
+    document.querySelectorAll('.cam-layout-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            setLayout(btn.dataset.layout);
+        });
+    });
+
+    refreshSelect.addEventListener('change', function () {
+        refreshRate = parseInt(refreshSelect.value, 10) || 0;
+        startRefresh();
+        if (refreshRate > 0) {
+            updateStatus('Автообновление: каждые ' + (refreshRate / 1000) + ' сек');
+        } else {
+            updateStatus('Автообновление выключено');
+        }
+    });
+
+    syncBtn.addEventListener('click', function () {
+        if (singleCamId) return;
+        updateStatus('Обновление…');
+        refreshSnapshots();
+    });
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            stopRefresh();
+            if (singleCamId) cleanupStreams();
+        } else {
+            if (singleCamId) {
+                enterSingleView(singleCamId);
+            } else {
+                startRefresh();
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch (e.key) {
+            case '1': setLayout('1x1'); break;
+            case '2': setLayout('2x2'); break;
+            case '3': setLayout('2x3'); break;
+            case '4': setLayout('3x3'); break;
+            case 'Escape':
+                if (singleCamId) exitSingleView();
+                break;
+            case 'ArrowLeft':
+                if (singleCamId) { e.preventDefault(); navigateCamera(-1); }
+                break;
+            case 'ArrowRight':
+                if (singleCamId) { e.preventDefault(); navigateCamera(1); }
+                break;
+            case 'r':
+            case 'R':
+                if (!e.ctrlKey && !e.metaKey) refreshSnapshots();
+                break;
+        }
+    });
+
+    // ─── Controls handlers ────────────────────────────────────────────
+    controlsEl.querySelector('.cam-btn-cancel').addEventListener('click', function () {
+        exitSingleView();
+    });
+
+    controlsEl.querySelector('.cam-btn-barrier').addEventListener('click', function () {
+        var cam = cameras.find(function (c) { return c.id === singleCamId; });
+        var gateName = cam ? cam.name : 'Неизвестные ворота';
+        barrierLog('open', gateName);
+        updateStatus('Шлагбаум открыт: ' + gateName);
+
+        setTimeout(function () {
+            barrierLog('close', gateName);
+        }, 5000);
+    });
+
+    // ─── Barrier Log ────────────────────────────────────────────────────
+
+    var logBody = document.getElementById('barrierLogBody');
+    var logEmpty = document.getElementById('barrierLogEmpty');
+    var logClearBtn = document.getElementById('barrierLogClear');
+
+    function barrierLog(action, gateName) {
+        logEmpty.style.display = 'none';
+        var now = new Date();
+        var time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        var date = now.toLocaleDateString('ru-RU');
+        var isOpen = action === 'open';
+        var label = isOpen ? 'ОТКРЫТИЕ' : 'ЗАКРЫТИЕ';
+        var cls = isOpen ? 'barrier-log-open' : 'barrier-log-close';
+
+        var entry = document.createElement('div');
+        entry.className = 'barrier-log-line ' + cls;
+        entry.innerHTML =
+            '<span class="barrier-log-prompt">&gt;</span> ' +
+            '[' + date + ' ' + time + '] ' +
+            '<span class="barrier-log-badge ' + cls + '">' + label + '</span> ' +
+            escHtml(gateName);
+
+        logBody.insertBefore(entry, logBody.firstChild);
+
+        var lines = logBody.querySelectorAll('.barrier-log-line');
+        for (var i = 100; i < lines.length; i++) {
+            lines[i].remove();
+        }
+    }
+
+    logClearBtn.addEventListener('click', function () {
+        var empty = document.getElementById('barrierLogEmpty');
+        logBody.innerHTML = '';
+        logBody.appendChild(empty);
+        empty.style.display = '';
+    });
+
+    // stub entries
+    (function () {
+        var stubGates = ['Въезд А', 'Въезд Б', 'Выезд А'];
+        var now = Date.now();
+        var stubs = [
+            { action: 'open',  gate: stubGates[0], offset: -3600000 },
+            { action: 'close', gate: stubGates[0], offset: -3595000 },
+            { action: 'open',  gate: stubGates[1], offset: -1800000 },
+            { action: 'close', gate: stubGates[1], offset: -1795000 },
+            { action: 'open',  gate: stubGates[2], offset: -600000 },
+            { action: 'close', gate: stubGates[2], offset: -595000 },
+        ];
+        stubs.forEach(function (s) {
+            logEmpty.style.display = 'none';
+            var d = new Date(now + s.offset);
+            var time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            var date = d.toLocaleDateString('ru-RU');
+            var isOpen = s.action === 'open';
+            var label = isOpen ? 'ОТКРЫТИЕ' : 'ЗАКРЫТИЕ';
+            var cls = isOpen ? 'barrier-log-open' : 'barrier-log-close';
+
+            var entry = document.createElement('div');
+            entry.className = 'barrier-log-line ' + cls;
+            entry.innerHTML =
+                '<span class="barrier-log-prompt">&gt;</span> ' +
+                '[' + date + ' ' + time + '] ' +
+                '<span class="barrier-log-badge ' + cls + '">' + label + '</span> ' +
+                escHtml(s.gate);
+            logBody.appendChild(entry);
+        });
+    })();
+
+    // ─── Init ───────────────────────────────────────────────────────────
+    refreshRate = parseInt(refreshSelect.value, 10) || 0;
+    setLayout('1x1');
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Удалённые города{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Удалённые города</h1>
+  <a href="/cities" class="back-link">← Назад</a>
+
+  <table class="data-table">
+    <thead>
+    <tr><th>ID</th><th>Наименование</th><th>Дата удаления</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% for c in cities %}
+    <tr>
+      <td>{{ c['id'] }}</td>
+      <td>{{ c.get('Name', '—') or '—' }}</td>
+      <td>{{ c.get('deleted', '—') or '—' }}</td>
+      <td>
+        <form method="post" action="/cities/restore/{{ c['id'] }}" class="inline">
+          <button type="submit" class="btn btn-restore">Восстановить</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Нет удалённых городов</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

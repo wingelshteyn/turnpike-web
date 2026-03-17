@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Улицы{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Улицы</h1>
+  <div class="actions-block">
+    <div class="actions">
+      <a href="/streets/add" class="btn btn-outline">Добавить</a>
+      <a href="/streets/deleted" class="btn btn-outline">Показать удалённые</a>
+    </div>
+    <form method="get" action="/streets" class="search-row">
+      <div class="search-input-wrap">
+        <input name="q" placeholder="Поиск..." value="{{ q or '' }}" autocomplete="off">
+      </div>
+      {% if q %}<a href="/streets" class="btn btn-outline">Сбросить</a>{% endif %}
+    </form>
+  </div>
+  <table class="data-table" id="streets-table">
+    <thead>
+    <tr><th>ID</th><th>Город</th><th>Наименование</th><th class="details-column">Создано</th><th class="details-column">Обновлено</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% if not streets %}
+    <tr><td colspan="6">Нет данных об улицах</td></tr>
+    {% endif %}
+    {% for s in streets %}
+    <tr>
+      <td>{{ s['id'] }}</td>
+      <td>{% for c in cities %}{% if c['id']|string == (s.get('City') or '')|string %}{{ c.get('Name', '') or '' }}{% endif %}{% endfor %}</td>
+      <td>{{ s.get('name') or s.get('Name', '—') or '—' }}</td>
+      <td class="details-column">{{ s.get('created', '—') or '—' }}</td>
+      <td class="details-column">{{ s.get('updated', '—') or '—' }}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-outline btn-sm toggle-details-btn" type="button">Показать подробности</button>
+          <div class="action-menu">
+            <button class="btn-menu" type="button">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="menu-content" onclick="event.stopPropagation()">
+              <a href="/streets/edit/{{ s['id'] }}" class="menu-item">Редактировать</a>
+              <form method="post" action="/streets/delete/{{ s['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
+                <button class="menu-item btn-delete-small" type="submit">Удалить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pagination.html" %}
+</div>
+{% endblock %}

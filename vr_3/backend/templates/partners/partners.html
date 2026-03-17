@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Партнёры{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Партнёры</h1>
+  <div class="actions-block">
+    <div class="actions">
+      <a href="/partners/add" class="btn btn-outline">Добавить нового партнёра</a>
+      <a href="/partners/deleted" class="btn btn-outline">Удалённые партнёры</a>
+    </div>
+    <form method="get" action="/partners" class="search-row">
+      <div class="search-input-wrap">
+        <input name="q" placeholder="Поиск..." value="{{ q or '' }}" autocomplete="off">
+      </div>
+      {% if q %}<a href="/partners" class="btn btn-outline">Сбросить</a>{% endif %}
+    </form>
+  </div>
+  {% if partners %}
+  <table class="data-table" id="partners-table">
+    <thead>
+    <tr><th>ID</th><th>Тип партнёра</th><th>Наименование</th><th class="details-column">Создано</th><th class="details-column">Обновлено</th><th>Действия</th></tr>
+    </thead>
+    <tbody>
+    {% for p in partners %}
+    <tr>
+      <td>{{ p['id'] }}</td>
+      <td>{{ partner_type_names.get((p.get('PartnerType') or p.get('f_PartnerType'))|string, '—') }}</td>
+      <td>{{ p.get('Name', '—') or '—' }}</td>
+      <td class="details-column">{{ p.get('created', '—') or '—' }}</td>
+      <td class="details-column">{{ p.get('updated', '—') or '—' }}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-outline btn-sm toggle-details-btn" type="button">Показать подробности</button>
+          <div class="action-menu">
+            <button class="btn-menu" type="button" title="Ещё действия">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="menu-content" onclick="event.stopPropagation()">
+              <a href="/partners/edit/{{ p['id'] }}" class="menu-item btn-accent-small">Редактировать</a>
+              <form method="post" action="/partners/delete/{{ p['id'] }}" onsubmit="return confirm('Удалить партнёра?')" class="inline">
+                <button class="menu-item btn-delete-small" type="submit">Удалить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pagination.html" %}
+  {% else %}
+  <p>Нет доступных партнёров.</p>
+  {% endif %}
+</div>
+{% endblock %}
