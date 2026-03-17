@@ -1211,6 +1211,16 @@ textarea {
     background: var(--primary-color);
 }
 
+/* Back-to-grid button in single camera view */
+.cam-cell-actions .cam-btn-back {
+    background: rgba(239, 68, 68, 0.9) !important;
+    color: #fff !important;
+}
+
+.cam-cell-actions .cam-btn-back:hover {
+    background: rgba(239, 68, 68, 1) !important;
+}
+
 /* Cell body */
 .cam-cell-body {
     position: absolute;
@@ -1279,7 +1289,8 @@ textarea {
 }
 
 /* Barrier Log Console (window like cam-single-controls) */
-.cameras-page .barrier-log-window {
+.cameras-page .barrier-log-window,
+.cameras-page .camera-console-window {
     display: block;
     margin: 20px 0 0;
     width: 100%;
@@ -1290,7 +1301,8 @@ textarea {
     overflow: hidden;
 }
 
-.cameras-page .barrier-log-header {
+.cameras-page .barrier-log-header,
+.cameras-page .camera-console-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1299,24 +1311,30 @@ textarea {
     border-bottom: 1px solid var(--border-color);
 }
 
-.cameras-page .barrier-log-title {
+.cameras-page .barrier-log-title,
+.cameras-page .camera-console-title {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.cameras-page .barrier-log-dot {
+.cameras-page .barrier-log-dot,
+.cameras-page .camera-console-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--text-muted);
 }
 
-.cameras-page .barrier-log-dot:nth-child(1) { background: #ff5f56; }
-.cameras-page .barrier-log-dot:nth-child(2) { background: #ffbd2e; }
-.cameras-page .barrier-log-dot:nth-child(3) { background: #27c93f; }
+.cameras-page .barrier-log-dot:nth-child(1),
+.cameras-page .camera-console-dot:nth-child(1) { background: #ff5f56; }
+.cameras-page .barrier-log-dot:nth-child(2),
+.cameras-page .camera-console-dot:nth-child(2) { background: #ffbd2e; }
+.cameras-page .barrier-log-dot:nth-child(3),
+.cameras-page .camera-console-dot:nth-child(3) { background: #27c93f; }
 
-.cameras-page .barrier-log-label {
+.cameras-page .barrier-log-label,
+.cameras-page .camera-console-label {
     margin-left: 4px;
     color: var(--text-secondary);
     font-size: 0.8rem;
@@ -1342,7 +1360,7 @@ textarea {
     border-color: var(--primary-color);
 }
 
-/* Console body - dark terminal look */
+/* Console body - dark terminal look (used only by log) */
 .cameras-page .barrier-log-console {
     max-height: 200px;
     overflow-y: auto;
@@ -1352,6 +1370,12 @@ textarea {
     font-size: 0.78rem;
     line-height: 1.6;
     color: #8b949e;
+}
+
+/* Camera console body - just container for grid, grows with layout */
+.cameras-page .camera-console-body {
+    padding: 12px 16px 16px;
+    background: #0d1117;
 }
 
 .cameras-page .barrier-log-empty {

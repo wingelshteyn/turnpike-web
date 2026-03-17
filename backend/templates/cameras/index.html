@@ -50,8 +50,20 @@
         <div class="cam-toolbar-status" id="camStatus"></div>
     </div>
 
-    <!-- Camera Grid -->
-    <div id="cameraGrid" class="cam-grid layout-1x1"></div>
+    <!-- Camera Grid inside console-like window -->
+    <div class="camera-console-window">
+        <div class="camera-console-header">
+            <div class="camera-console-title">
+                <span class="camera-console-dot"></span>
+                <span class="camera-console-dot"></span>
+                <span class="camera-console-dot"></span>
+                <span class="camera-console-label">Камеры</span>
+            </div>
+        </div>
+        <div class="camera-console-body">
+            <div id="cameraGrid" class="cam-grid layout-1x1"></div>
+        </div>
+    </div>
 
     <!-- Single-view controls (placed outside the grid) -->
     <div id="camControls" class="cam-single-controls" style="display:none;">
@@ -211,7 +223,7 @@
                 '<span class="cam-cell-name">' + escHtml(cam.name) + ' — MJPEG поток</span>' +
                 '<div class="cam-cell-actions">' +
                     navHtml +
-                    '<button class="cam-cell-btn cam-btn-back" title="Назад к сетке (Esc)">' +
+                    '<button class="cam-cell-btn cam-btn-back" title="Назад к сетке (Esc)" style="background: rgba(239, 68, 68, 0.9); color:#fff;">' +
                         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
                     '</button>' +
                 '</div>' +
