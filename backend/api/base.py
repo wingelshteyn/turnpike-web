@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from fastapi import HTTPException
 
-from token_manager import TokenManager
+from ..token_manager import TokenManager
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,23 @@ class BaseAPI:
                 method, url, params=params, json=json,
             )
             response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            # Один ретрай при 401/403: пытаемся обновить токены и повторить запрос
+            if exc.response.status_code in (401, 403):
+                try:
+                    await self.token_manager.refresh_tokens()
+                    await self.client.aclose()
+                    self.client = httpx.AsyncClient(
+                        headers=self.token_manager.get_auth_headers(),
+                        timeout=10,
+                    )
+                    response = await self.client.request(
+                        method, url, params=params, json=json,
+                    )
+                    response.raise_for_status()
+                except Exception:
+                    # если ретрай не помог — падаем в общий обработчик ниже
+                    raise exc
         except httpx.TimeoutException as exc:
             logger.error("Таймаут при обращении к %s: %s", url, exc)
             raise HTTPException(

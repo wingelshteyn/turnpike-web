@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 from pathlib import Path
 from typing import Optional
+
+import bcrypt
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +15,34 @@ _USERS_FILE = Path(__file__).resolve().parent / "users.json"
 
 
 def _hash_password(password: str) -> str:
-    """SHA-256 хэш пароля."""
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+    """Безопасный хэш пароля (bcrypt)."""
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
+
+
+def _verify_password(password: str, stored_hash: str) -> bool:
+    """Проверка пароля.
+
+    Поддерживает:
+    - bcrypt-хэши (новый формат)
+    - legacy SHA-256 hex (старый формат) — для миграции при первом логине
+    """
+    if not stored_hash:
+        return False
+    # bcrypt
+    if stored_hash.startswith("$2"):
+        try:
+            return bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8"))
+        except Exception:
+            return False
+    # legacy sha256 hex (64 символа)
+    if len(stored_hash) == 64:
+        import hashlib
+
+        legacy = hashlib.sha256(password.encode("utf-8")).hexdigest()
+        return legacy == stored_hash
+    return False
 
 
 def _load() -> dict:
@@ -53,8 +80,16 @@ def authenticate(username: str, password: str) -> Optional[dict]:
     """
     users = _load()
     user = users.get(username)
-    if user and user["password"] == _hash_password(password):
-        return {"username": username, "role": user["role"]}
+    if not user:
+        return None
+    stored = user.get("password", "")
+    if _verify_password(password, stored):
+        # миграция legacy sha256 → bcrypt при первом успешном входе
+        if stored and len(stored) == 64 and not stored.startswith("$2"):
+            user["password"] = _hash_password(password)
+            users[username] = user
+            _save(users)
+        return {"username": username, "role": user.get("role", "USER")}
     return None
 
 

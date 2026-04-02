@@ -11,6 +11,10 @@ __pycache__/
 venv/
 .venv/
 
+# Runtime data
+backend/users.json
+backend/sessions.json
+
 # OS files
 .DS_Store
 Thumbs.db

@@ -2,13 +2,31 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
+from dataclasses import dataclass
 
 import httpx
 
-from config import HOST_AUTH
+from .config import HOST_AUTH, TOKEN_CACHE_TTL_SECONDS
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class _TokenBundle:
+    access: str
+    refresh: str
+    session: str
+    obtained_at: float
+
+
+_cache_lock = asyncio.Lock()
+_token_cache: dict[tuple[str, str], _TokenBundle] = {}
+
+
+def _now() -> float:
+    return time.time()
 
 
 class TokenManager:
@@ -27,9 +45,30 @@ class TokenManager:
 
     async def authenticate(self) -> str:
         """Авторизация: получить токены и сессию."""
-        async with httpx.AsyncClient() as client:
+        cache_key = (self.username, self.password)
+
+        async with _cache_lock:
+            cached = _token_cache.get(cache_key)
+            if cached and (_now() - cached.obtained_at) < TOKEN_CACHE_TTL_SECONDS:
+                self.token_access = cached.access
+                self.token_refresh = cached.refresh
+                self.session = cached.session
+                return self.token_access
+
+        async with httpx.AsyncClient(timeout=10) as client:
             await self._obtain_tokens(client)
             await self._login(client)
+
+        if not (self.token_access and self.token_refresh and self.session):
+            raise RuntimeError("Токены/сессия не получены")
+
+        async with _cache_lock:
+            _token_cache[cache_key] = _TokenBundle(
+                access=self.token_access,
+                refresh=self.token_refresh,
+                session=self.session,
+                obtained_at=_now(),
+            )
         return self.token_access
 
     def get_auth_headers(self) -> dict:
@@ -44,7 +83,9 @@ class TokenManager:
 
     async def refresh_tokens(self) -> None:
         """Обновить пару access/refresh токенов."""
-        async with httpx.AsyncClient() as client:
+        if not self.token_refresh:
+            raise RuntimeError("Refresh token отсутствует")
+        async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(
                 f"{HOST_AUTH}/refresh",
                 headers={"Authorization": f"Bearer {self.token_refresh}"},
@@ -60,6 +101,16 @@ class TokenManager:
             self.token_access = tokens.get("token_access")
             self.token_refresh = tokens.get("token_refresh")
             logger.info("Токены обновлены")
+
+        if self.token_access and self.token_refresh and self.session:
+            cache_key = (self.username, self.password)
+            async with _cache_lock:
+                _token_cache[cache_key] = _TokenBundle(
+                    access=self.token_access,
+                    refresh=self.token_refresh,
+                    session=self.session,
+                    obtained_at=_now(),
+                )
 
     # ------------------------------------------------------------------
     # Внутренние методы

@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
-from config import API_BASE_URL
-from api.base import BaseAPI
+from ..config import API_BASE_URL
+from .base import BaseAPI
 
 logger = logging.getLogger(__name__)
 

@@ -1,22 +1,17 @@
 """Точка входа приложения: создание FastAPI-приложения и подключение маршрутов."""
 
 import logging
-import sys
 from pathlib import Path
-
-# Гарантируем, что директория backend/ находится в sys.path,
-# чтобы импорты работали независимо от того, откуда запущен скрипт.
-BACKEND_DIR = Path(__file__).resolve().parent
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
 
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import RedirectResponse, Response
+from starlette.status import HTTP_403_FORBIDDEN
 
-from config import STATIC_DIR
-from routes import (
+from .config import STATIC_DIR
+from .session_store import get_session, init_session_store
+from .routes import (
     auth_router,
     cameras_router,
     cities_router,
@@ -31,7 +26,7 @@ from routes import (
     contacts_router,
 )
 
-from user_store import init_users
+from .user_store import init_users
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,6 +34,7 @@ app = FastAPI()
 
 # --- Инициализация пользователей (admin / admin) ---
 init_users()
+init_session_store()
 
 # --- Статические файлы ---
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -47,7 +43,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # --- Middleware: проверка аутентификации ---
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    """Проверяет наличие сессии. Без авторизации доступна только /auth и статика."""
+    """Проверяет валидность сессии. Без авторизации доступна только /auth и статика."""
     path = request.url.path
 
     # Разрешаем доступ без авторизации
@@ -57,13 +53,31 @@ async def auth_middleware(request: Request, call_next):
     ):
         return await call_next(request)
 
-    # Проверяем наличие сессионной куки
-    session = request.cookies.get("session")
-    if not session:
+    session_id = request.cookies.get("session")
+    sess = get_session(session_id)
+    if not sess:
         return RedirectResponse(url="/auth", status_code=302)
 
-    # Сохраняем имя пользователя в state для использования в шаблонах
-    request.state.username = request.cookies.get("username", "user")
+    # CSRF-защита для небезопасных методов (HTML-формы)
+    if request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:
+        # /logout — тоже защищаем (кнопка в UI отправляет GET сейчас, но на будущее)
+        form_token = None
+        header_token = request.headers.get("x-csrf-token")
+        try:
+            # starlette кэширует body, так что form() безопасен
+            form = await request.form()
+            form_token = form.get("csrf_token")
+        except Exception:
+            form_token = None
+        if not (form_token and form_token == sess.csrf_token) and not (
+            header_token and header_token == sess.csrf_token
+        ):
+            return Response(status_code=HTTP_403_FORBIDDEN, content="CSRF check failed")
+
+    # Сохраняем данные пользователя в state для использования в шаблонах/роутах
+    request.state.username = sess.username
+    request.state.role = sess.role
+    request.state.csrf_token = sess.csrf_token
     return await call_next(request)
 
 
@@ -88,8 +102,9 @@ async def favicon():
 
 
 if __name__ == "__main__":
+    BACKEND_DIR = Path(__file__).resolve().parent
     uvicorn.run(
-        "main:app",
+        "backend.main:app",
         host="0.0.0.0",
         port=8001,
         reload=True,

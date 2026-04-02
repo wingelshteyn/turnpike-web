@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from config import API_BASE_URL
-from api.base import BaseAPI
+from ..config import API_BASE_URL
+from .base import BaseAPI
 
 
 class PartnerTypeAPI(BaseAPI):

@@ -17,12 +17,10 @@ import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-import cv2
-
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 
-from dependencies import templates
+from ..dependencies import templates
 
 os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
 
@@ -61,6 +59,8 @@ SNAPSHOT_JPEG_QUALITY = 65
 STREAM_JPEG_QUALITY = 60
 MAX_WIDTH = 960
 
+_cache_thread_started = False
+
 
 def _find_camera(cam_id: str) -> dict | None:
     for c in CAMERAS:
@@ -91,6 +91,8 @@ def _fetch_http_preview(url: str) -> bytes | None:
 
 
 def _read_frame_opencv(rtsp_url: str, transport: str = "tcp") -> bytes | None:
+    import cv2
+
     prev = os.environ.get("OPENCV_FFMPEG_CAPTURE_OPTIONS")
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = f"rtsp_transport;{transport}"
     try:
@@ -183,8 +185,13 @@ def _cache_worker():
         time.sleep(_cache_refresh_interval)
 
 
-_cache_thread = threading.Thread(target=_cache_worker, daemon=True)
-_cache_thread.start()
+def _ensure_cache_thread_started() -> None:
+    global _cache_thread_started
+    if _cache_thread_started:
+        return
+    _cache_thread_started = True
+    thread = threading.Thread(target=_cache_worker, daemon=True)
+    thread.start()
 
 
 def _get_cached_snapshot(cam_id: str) -> bytes | None:
@@ -197,12 +204,14 @@ def _get_cached_snapshot(cam_id: str) -> bytes | None:
 
 async def _generate_mjpeg(rtsp_url: str):
     """MJPEG-поток с FPS-лимитом и graceful shutdown."""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     queue: asyncio.Queue = asyncio.Queue(maxsize=2)
     stop_event = threading.Event()
     target_interval = 1.0 / MAX_STREAM_FPS
 
     def producer():
+        import cv2
+
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         try:
@@ -264,6 +273,7 @@ async def api_cameras_list():
 
 @router.get("/api/{cam_id}/snapshot")
 async def api_camera_snapshot(cam_id: str):
+    _ensure_cache_thread_started()
     cam = _find_camera(cam_id)
     if not cam:
         return Response(status_code=404, content=b"Camera not found")
@@ -294,6 +304,7 @@ async def api_camera_snapshot(cam_id: str):
 
 @router.get("/api/{cam_id}/stream")
 async def api_camera_stream(cam_id: str):
+    _ensure_cache_thread_started()
     cam = _find_camera(cam_id)
     if not cam:
         return Response(status_code=404, content=b"Camera not found")

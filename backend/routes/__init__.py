@@ -1,17 +1,17 @@
 """Регистрация всех маршрутов приложения."""
 
-from routes.auth import router as auth_router
-from routes.cameras import router as cameras_router
-from routes.partner_types import router as partner_types_router
-from routes.region_types import router as region_types_router
-from routes.partners import router as partners_router
-from routes.regions import router as regions_router
-from routes.cities import router as cities_router
-from routes.streets import router as streets_router
-from routes.houses import router as houses_router
-from routes.contact_types import router as contact_types_router
-from routes.clients import router as clients_router
-from routes.contacts import router as contacts_router
+from .auth import router as auth_router
+from .cameras import router as cameras_router
+from .partner_types import router as partner_types_router
+from .region_types import router as region_types_router
+from .partners import router as partners_router
+from .regions import router as regions_router
+from .cities import router as cities_router
+from .streets import router as streets_router
+from .houses import router as houses_router
+from .contact_types import router as contact_types_router
+from .clients import router as clients_router
+from .contacts import router as contacts_router
 
 __all__ = [
     "auth_router",

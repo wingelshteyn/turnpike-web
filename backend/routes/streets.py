@@ -5,9 +5,9 @@ import logging
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from api import CityAPI, StreetAPI
-from dependencies import templates
-from helpers import fetch_split, filter_by_query, normalize_streets_for_template, paginate
+from ..api import CityAPI, StreetAPI
+from ..dependencies import templates
+from ..helpers import fetch_split, filter_by_query, normalize_streets_for_template, paginate
 
 logger = logging.getLogger(__name__)
 

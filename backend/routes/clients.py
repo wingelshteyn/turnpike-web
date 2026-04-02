@@ -6,9 +6,9 @@ from typing import Optional
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from api import ClientAPI
-from dependencies import templates
-from helpers import fetch_split, filter_by_query, paginate
+from ..api import ClientAPI
+from ..dependencies import templates
+from ..helpers import fetch_split, filter_by_query, paginate
 
 logger = logging.getLogger(__name__)
 

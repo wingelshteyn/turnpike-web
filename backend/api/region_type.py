@@ -3,8 +3,8 @@
 Поля и CRUD-интерфейс совпадают с PartnerTypeAPI (Brief, Name).
 """
 
-from config import API_BASE_URL
-from api.partner_type import PartnerTypeAPI
+from ..config import API_BASE_URL
+from .partner_type import PartnerTypeAPI
 
 
 class RegionTypeAPI(PartnerTypeAPI):

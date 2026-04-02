@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from api.base import BaseAPI
+from .api.base import BaseAPI
 
 logger = logging.getLogger(__name__)
 

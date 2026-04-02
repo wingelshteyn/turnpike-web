@@ -2,7 +2,7 @@
 
 from fastapi.templating import Jinja2Templates
 
-from config import TEMPLATES_DIR
+from .config import TEMPLATES_DIR
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 templates.env.globals["range"] = range

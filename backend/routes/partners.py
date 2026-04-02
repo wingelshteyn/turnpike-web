@@ -5,9 +5,9 @@ import logging
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from api import PartnerAPI, PartnerTypeAPI
-from dependencies import templates
-from helpers import fetch_split, filter_by_query, paginate
+from ..api import PartnerAPI, PartnerTypeAPI
+from ..dependencies import templates
+from ..helpers import fetch_split, filter_by_query, paginate
 
 logger = logging.getLogger(__name__)
 
