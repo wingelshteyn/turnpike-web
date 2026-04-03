@@ -1,23 +1,19 @@
 """Маршруты для партнёров (Partner)."""
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ..api import PartnerAPI, PartnerTypeAPI
-from ..dependencies import templates
+from ..api import PartnerAPI
+from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..reference_cache import partner_types_list as partner_types_list_cached
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/partners", tags=["partners"])
-
-
-def _ctx(request: Request, **kwargs):
-    ctx = {"request": request, "username": getattr(request.state, "username", None)}
-    ctx.update(kwargs)
-    return ctx
 
 
 def _partner_type_names(partner_types):
@@ -27,14 +23,18 @@ def _partner_type_names(partner_types):
 
 @router.get("", response_class=HTMLResponse)
 async def partners_list(request: Request, q: str = "", page: int = 1):
-    async with PartnerAPI() as api:
-        raw = await api.list(include_deleted=False)
-    async with PartnerTypeAPI() as pt_api:
-        partner_types = await pt_api.list()
+    async def _fetch_partners():
+        async with PartnerAPI() as api:
+            return await api.list(include_deleted=False)
+
+    raw, partner_types = await asyncio.gather(
+        _fetch_partners(),
+        partner_types_list_cached(),
+    )
     partner_type_names = _partner_type_names(partner_types)
     filtered = filter_by_query(raw, q, ["id", "Name", "PartnerType", "f_PartnerType", "created", "updated"])
     partners, total, total_pages = paginate(filtered, page)
-    return templates.TemplateResponse("partners/partners.html", _ctx(
+    return templates.TemplateResponse("partners/partners.html", template_ctx(
         request, partners=partners, partner_types=partner_types,
         partner_type_names=partner_type_names, q=q,
         page=page, total_pages=total_pages, base_url="/partners",
@@ -44,10 +44,9 @@ async def partners_list(request: Request, q: str = "", page: int = 1):
 @router.get("/deleted", response_class=HTMLResponse)
 async def deleted_partners(request: Request):
     _, deleted = await fetch_split(PartnerAPI)
-    async with PartnerTypeAPI() as pt_api:
-        partner_types = await pt_api.list()
+    partner_types = await partner_types_list_cached()
     partner_type_names = _partner_type_names(partner_types)
-    return templates.TemplateResponse("partners/deleted.html", _ctx(
+    return templates.TemplateResponse("partners/deleted.html", template_ctx(
         request, partners=deleted, partner_types=partner_types,
         partner_type_names=partner_type_names,
     ))
@@ -55,10 +54,9 @@ async def deleted_partners(request: Request):
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    async with PartnerTypeAPI() as api:
-        partner_types = await api.list()
+    partner_types = await partner_types_list_cached()
     return templates.TemplateResponse(
-        "partners/add.html", _ctx(request, partner_types=partner_types),
+        "partners/add.html", template_ctx(request, partner_types=partner_types),
     )
 
 
@@ -72,11 +70,15 @@ async def add_partner(partner_type: int = Form(...), name: str = Form(...)):
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
 async def edit_form(request: Request, record_id: int):
-    async with PartnerAPI() as api:
-        partner = await api.read(record_id)
-    async with PartnerTypeAPI() as pt_api:
-        partner_types = await pt_api.list()
-    return templates.TemplateResponse("partners/edit.html", _ctx(
+    async def _read_partner():
+        async with PartnerAPI() as api:
+            return await api.read(record_id)
+
+    partner, partner_types = await asyncio.gather(
+        _read_partner(),
+        partner_types_list_cached(),
+    )
+    return templates.TemplateResponse("partners/edit.html", template_ctx(
         request, partner=partner, partner_types=partner_types,
     ))
 
@@ -90,10 +92,9 @@ async def update_partner(
 ):
     async with PartnerAPI() as api:
         partner = await api.update(record_id, partner_type=partner_type, name=name)
-    async with PartnerTypeAPI() as pt_api:
-        partner_types = await pt_api.list()
+    partner_types = await partner_types_list_cached()
     logger.info("Партнёр %s обновлён", record_id)
-    return templates.TemplateResponse("partners/edit.html", _ctx(
+    return templates.TemplateResponse("partners/edit.html", template_ctx(
         request, partner=partner, partner_types=partner_types,
         message="Запись успешно обновлена",
     ))

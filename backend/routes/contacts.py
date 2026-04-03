@@ -1,13 +1,14 @@
 """Маршруты для контактов (Contact)."""
 
+import asyncio
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ..api import ContactAPI, ClientAPI, ContactTypeAPI
-from ..dependencies import templates
+from ..api import ClientAPI, ContactAPI, ContactTypeAPI
+from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ async def contacts_list(request: Request, q: str = "", page: int = 1):
     items, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
         "contacts/index.html",
-        {"request": request, "items": items, "q": q, "page": page, "total_pages": total_pages, "base_url": "/contacts"},
+        template_ctx(request, items=items, q=q, page=page, total_pages=total_pages, base_url="/contacts"),
     )
 
 
@@ -31,21 +32,26 @@ async def contacts_list(request: Request, q: str = "", page: int = 1):
 async def deleted_contacts(request: Request):
     _, deleted = await fetch_split(ContactAPI)
     return templates.TemplateResponse(
-        "contacts/deleted.html", {"request": request, "items": deleted},
+        "contacts/deleted.html", template_ctx(request, items=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    async with ClientAPI() as api:
-        clients = await api.case()
-    async with ContactTypeAPI() as api:
-        contact_types = await api.case()
-    return templates.TemplateResponse("contacts/add.html", {
-        "request": request,
-        "clients": clients,
-        "contact_types": contact_types,
-    })
+    async def _clients():
+        async with ClientAPI() as api:
+            return await api.case()
+
+    async def _types():
+        async with ContactTypeAPI() as api:
+            return await api.case()
+
+    clients, contact_types = await asyncio.gather(_clients(), _types())
+    return templates.TemplateResponse("contacts/add.html", template_ctx(
+        request,
+        clients=clients,
+        contact_types=contact_types,
+    ))
 
 
 @router.post("/add")
@@ -62,18 +68,25 @@ async def add_contact(
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
 async def edit_form(request: Request, record_id: int):
-    async with ContactAPI() as api:
-        item = await api.read(record_id)
-    async with ClientAPI() as api:
-        clients = await api.case()
-    async with ContactTypeAPI() as api:
-        contact_types = await api.case()
-    return templates.TemplateResponse("contacts/edit.html", {
-        "request": request,
-        "item": item,
-        "clients": clients,
-        "contact_types": contact_types,
-    })
+    async def _read_item():
+        async with ContactAPI() as api:
+            return await api.read(record_id)
+
+    async def _clients():
+        async with ClientAPI() as api:
+            return await api.case()
+
+    async def _types():
+        async with ContactTypeAPI() as api:
+            return await api.case()
+
+    item, clients, contact_types = await asyncio.gather(_read_item(), _clients(), _types())
+    return templates.TemplateResponse("contacts/edit.html", template_ctx(
+        request,
+        item=item,
+        clients=clients,
+        contact_types=contact_types,
+    ))
 
 
 @router.post("/edit/{record_id:int}")
@@ -83,20 +96,25 @@ async def update_contact(
     contact_type_id: int = Form(...),
     contact: str = Form(""),
 ):
+    async def _clients():
+        async with ClientAPI() as api:
+            return await api.case()
+
+    async def _types():
+        async with ContactTypeAPI() as api:
+            return await api.case()
+
     async with ContactAPI() as api:
         item = await api.update(record_id, client_id=client_id, contact_type_id=contact_type_id, contact=contact)
-    async with ClientAPI() as capi:
-        clients = await capi.case()
-    async with ContactTypeAPI() as ctapi:
-        contact_types = await ctapi.case()
+    clients, contact_types = await asyncio.gather(_clients(), _types())
     logger.info("Контакт %s обновлён", record_id)
-    return templates.TemplateResponse("contacts/edit.html", {
-        "request": request,
-        "item": item,
-        "clients": clients,
-        "contact_types": contact_types,
-        "message": "Запись успешно обновлена",
-    })
+    return templates.TemplateResponse("contacts/edit.html", template_ctx(
+        request,
+        item=item,
+        clients=clients,
+        contact_types=contact_types,
+        message="Запись успешно обновлена",
+    ))
 
 
 @router.post("/delete/{record_id:int}")

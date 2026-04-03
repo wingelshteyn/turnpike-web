@@ -7,7 +7,7 @@ from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..api import ClientAPI
-from ..dependencies import templates
+from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ async def clients_list(request: Request, q: str = "", page: int = 1):
     items, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
         "clients/index.html",
-        {"request": request, "items": items, "q": q, "page": page, "total_pages": total_pages, "base_url": "/clients"},
+        template_ctx(request, items=items, q=q, page=page, total_pages=total_pages, base_url="/clients"),
     )
 
 
@@ -31,13 +31,13 @@ async def clients_list(request: Request, q: str = "", page: int = 1):
 async def deleted_clients(request: Request):
     _, deleted = await fetch_split(ClientAPI)
     return templates.TemplateResponse(
-        "clients/deleted.html", {"request": request, "items": deleted},
+        "clients/deleted.html", template_ctx(request, items=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("clients/add.html", {"request": request})
+    return templates.TemplateResponse("clients/add.html", template_ctx(request))
 
 
 @router.post("/add")
@@ -59,7 +59,7 @@ async def edit_form(request: Request, record_id: int):
     async with ClientAPI() as api:
         item = await api.read(record_id)
     return templates.TemplateResponse(
-        "clients/edit.html", {"request": request, "item": item},
+        "clients/edit.html", template_ctx(request, item=item),
     )
 
 
@@ -75,11 +75,11 @@ async def update_client(
     async with ClientAPI() as api:
         item = await api.update(record_id, name=name, place=place, house=house_int, apart=apart or None)
     logger.info("Клиент %s обновлён", record_id)
-    return templates.TemplateResponse("clients/edit.html", {
-        "request": request,
-        "item": item,
-        "message": "Запись успешно обновлена",
-    })
+    return templates.TemplateResponse("clients/edit.html", template_ctx(
+        request,
+        item=item,
+        message="Запись успешно обновлена",
+    ))
 
 
 @router.post("/delete/{record_id:int}")

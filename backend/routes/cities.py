@@ -6,8 +6,9 @@ from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..api import CityAPI
-from ..dependencies import templates
+from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..reference_cache import invalidate_cities_cache
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ async def cities_list(request: Request, q: str = "", page: int = 1):
     cities, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
         "cities/cities.html",
-        {"request": request, "cities": cities, "q": q, "page": page, "total_pages": total_pages, "base_url": "/cities"},
+        template_ctx(request, cities=cities, q=q, page=page, total_pages=total_pages, base_url="/cities"),
     )
 
 
@@ -30,19 +31,20 @@ async def cities_list(request: Request, q: str = "", page: int = 1):
 async def deleted_cities(request: Request):
     _, deleted = await fetch_split(CityAPI)
     return templates.TemplateResponse(
-        "cities/deleted.html", {"request": request, "cities": deleted},
+        "cities/deleted.html", template_ctx(request, cities=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("cities/add.html", {"request": request})
+    return templates.TemplateResponse("cities/add.html", template_ctx(request))
 
 
 @router.post("/add")
 async def add_city(name: str = Form(...)):
     async with CityAPI() as api:
         await api.create(name=name)
+    invalidate_cities_cache()
     logger.info("Создан город %s", name)
     return RedirectResponse(url="/cities", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -52,7 +54,7 @@ async def edit_form(request: Request, record_id: int):
     async with CityAPI() as api:
         city = await api.read(record_id)
     return templates.TemplateResponse(
-        "cities/edit.html", {"request": request, "city": city},
+        "cities/edit.html", template_ctx(request, city=city),
     )
 
 
@@ -62,12 +64,13 @@ async def update_city(
 ):
     async with CityAPI() as api:
         city = await api.update(record_id, name=name)
+    invalidate_cities_cache()
     logger.info("Город %s обновлён", record_id)
-    return templates.TemplateResponse("cities/edit.html", {
-        "request": request,
-        "city": city,
-        "message": "Запись успешно обновлена",
-    })
+    return templates.TemplateResponse("cities/edit.html", template_ctx(
+        request,
+        city=city,
+        message="Запись успешно обновлена",
+    ))
 
 
 @router.post("/delete/{record_id:int}")
@@ -77,6 +80,7 @@ async def delete_city(record_id: int):
         if record.get("deleted"):
             raise HTTPException(status_code=400, detail="Запись уже удалена")
         await api.delete(record_id)
+    invalidate_cities_cache()
     logger.info("Удалена запись %s", record_id)
     return RedirectResponse(url="/cities", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -85,5 +89,6 @@ async def delete_city(record_id: int):
 async def restore_city(record_id: int):
     async with CityAPI() as api:
         await api.restore(record_id)
+    invalidate_cities_cache()
     logger.info("Восстановлена запись %s", record_id)
     return RedirectResponse(url="/cities", status_code=status.HTTP_303_SEE_OTHER)

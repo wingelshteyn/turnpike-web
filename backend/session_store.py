@@ -11,8 +11,9 @@ import secrets
 import threading
 import time
 from dataclasses import dataclass, asdict
-from pathlib import Path
 from typing import Optional
+
+from .config import DATA_DIR
 
 
 @dataclass
@@ -25,8 +26,7 @@ class SessionData:
     expires_at: float
 
 
-_BACKEND_DIR = Path(__file__).resolve().parent
-_SESSIONS_FILE = _BACKEND_DIR / "sessions.json"
+_SESSIONS_FILE = DATA_DIR / "sessions.json"
 
 _lock = threading.RLock()
 _sessions: dict[str, SessionData] = {}
@@ -51,7 +51,6 @@ def _load_from_disk() -> None:
             except TypeError:
                 continue
     except Exception:
-        # если файл битый — просто стартуем с пустого
         return
 
 

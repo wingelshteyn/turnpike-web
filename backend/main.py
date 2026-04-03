@@ -48,7 +48,7 @@ async def auth_middleware(request: Request, call_next):
 
     # Разрешаем доступ без авторизации
     if (
-        path in ("/auth", "/favicon.ico")
+        path in ("/auth", "/favicon.ico", "/health")
         or path.startswith("/static/")
     ):
         return await call_next(request)
@@ -94,6 +94,12 @@ app.include_router(contact_types_router)
 app.include_router(clients_router)
 app.include_router(contacts_router)
 app.include_router(cameras_router)
+
+
+@app.get("/health", include_in_schema=False)
+async def health():
+    """Проверка готовности для балансировщика / оркестратора."""
+    return {"status": "ok"}
 
 
 @app.get("/favicon.ico", include_in_schema=False)

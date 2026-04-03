@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 from typing import Optional
 
 import bcrypt
 
+from .config import DATA_DIR
+
 logger = logging.getLogger(__name__)
 
-_USERS_FILE = Path(__file__).resolve().parent / "users.json"
+_USERS_FILE = DATA_DIR / "users.json"
 
 
 def _hash_password(password: str) -> str:

@@ -4,12 +4,10 @@
 """
 
 from ..config import API_BASE_URL
-from .partner_type import PartnerTypeAPI
+from .base import BaseAPI
+from .brief_name_crud import BriefNameCRUDMixin
 
 
-class RegionTypeAPI(PartnerTypeAPI):
+class RegionTypeAPI(BriefNameCRUDMixin, BaseAPI):
     def __init__(self):
-        # Вызываем BaseAPI.__init__ напрямую, минуя PartnerTypeAPI
-        super(PartnerTypeAPI, self).__init__(
-            base_url=f"{API_BASE_URL}/axgate.RegionType",
-        )
+        super().__init__(base_url=f"{API_BASE_URL}/axgate.RegionType")

@@ -6,18 +6,13 @@ from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..api import RegionTypeAPI
-from ..dependencies import templates
+from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..reference_cache import invalidate_region_types_cache
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/region-types", tags=["region_types"])
-
-
-def _ctx(request: Request, **kwargs):
-    ctx = {"request": request, "username": getattr(request.state, "username", None)}
-    ctx.update(kwargs)
-    return ctx
 
 
 @router.get("", response_class=HTMLResponse)
@@ -27,7 +22,7 @@ async def region_types_list(request: Request, q: str = "", page: int = 1):
     territories, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
         "region_types/territories.html",
-        _ctx(request, territories=territories, q=q, page=page, total_pages=total_pages, base_url="/region-types"),
+        template_ctx(request, territories=territories, q=q, page=page, total_pages=total_pages, base_url="/region-types"),
     )
 
 
@@ -35,19 +30,20 @@ async def region_types_list(request: Request, q: str = "", page: int = 1):
 async def deleted_region_types(request: Request):
     _, deleted = await fetch_split(RegionTypeAPI)
     return templates.TemplateResponse(
-        "region_types/deleted.html", _ctx(request, regions=deleted),
+        "region_types/deleted.html", template_ctx(request, regions=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("region_types/add.html", _ctx(request))
+    return templates.TemplateResponse("region_types/add.html", template_ctx(request))
 
 
 @router.post("/add")
 async def add_region_type(type: str = Form(...), name: str = Form(...)):
     async with RegionTypeAPI() as api:
         await api.create(brief=type, name=name)
+    invalidate_region_types_cache()
     logger.info("Создан тип территории %s / %s", type, name)
     return RedirectResponse(url="/region-types", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -57,7 +53,7 @@ async def edit_form(request: Request, record_id: int):
     async with RegionTypeAPI() as api:
         region = await api.read(record_id)
     return templates.TemplateResponse(
-        "region_types/edit.html", _ctx(request, region=region),
+        "region_types/edit.html", template_ctx(request, region=region),
     )
 
 
@@ -70,10 +66,11 @@ async def update_region_type(
 ):
     async with RegionTypeAPI() as api:
         region = await api.update(record_id, brief=type, name=name)
+    invalidate_region_types_cache()
     logger.info("Тип территории %s обновлён", record_id)
     return templates.TemplateResponse(
         "region_types/edit.html",
-        _ctx(request, region=region, message="Запись обновлена"),
+        template_ctx(request, region=region, message="Запись обновлена"),
     )
 
 
@@ -84,6 +81,7 @@ async def delete_region_type(record_id: int):
         if record.get("deleted"):
             raise HTTPException(status_code=400, detail="Запись уже удалена")
         await api.delete(record_id)
+    invalidate_region_types_cache()
     logger.info("Удалена запись %s", record_id)
     return RedirectResponse(url="/region-types", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -92,5 +90,6 @@ async def delete_region_type(record_id: int):
 async def restore_region_type(record_id: int):
     async with RegionTypeAPI() as api:
         await api.restore(record_id)
+    invalidate_region_types_cache()
     logger.info("Восстановлена запись %s", record_id)
     return RedirectResponse(url="/region-types", status_code=status.HTTP_303_SEE_OTHER)

@@ -1,42 +1,53 @@
 """Маршруты для территорий (Region)."""
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ..api import PartnerAPI, RegionAPI, RegionTypeAPI
-from ..dependencies import templates
+from ..api import PartnerAPI, RegionAPI
+from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..reference_cache import region_types_list as region_types_list_cached
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/regions", tags=["regions"])
 
 
-def _ctx(request: Request, **kwargs):
-    ctx = {"request": request, "username": getattr(request.state, "username", None)}
-    ctx.update(kwargs)
-    return ctx
-
-
 async def _region_context():
     """Загрузить справочники (партнёры + типы территорий) для шаблона."""
-    async with PartnerAPI() as p_api:
-        partners = await p_api.list()
-    async with RegionTypeAPI() as rt_api:
-        region_types = await rt_api.list()
+
+    async def _partners():
+        async with PartnerAPI() as api:
+            return await api.list()
+
+    partners, region_types = await asyncio.gather(
+        _partners(),
+        region_types_list_cached(),
+    )
     return partners, region_types
 
 
 @router.get("", response_class=HTMLResponse)
 async def regions_list(request: Request, q: str = "", page: int = 1):
-    async with RegionAPI() as api:
-        raw = await api.list(include_deleted=False)
-    partners, region_types = await _region_context()
+    async def _fetch_regions():
+        async with RegionAPI() as api:
+            return await api.list(include_deleted=False)
+
+    async def _fetch_partners():
+        async with PartnerAPI() as api:
+            return await api.list()
+
+    raw, partners, region_types = await asyncio.gather(
+        _fetch_regions(),
+        _fetch_partners(),
+        region_types_list_cached(),
+    )
     filtered = filter_by_query(raw, q, ["id", "Name", "Place", "Partner", "RegionType", "created"])
     regions, total, total_pages = paginate(filtered, page)
-    return templates.TemplateResponse("regions/regions.html", _ctx(
+    return templates.TemplateResponse("regions/regions.html", template_ctx(
         request, regions=regions, partners=partners, region_types=region_types, q=q,
         page=page, total_pages=total_pages, base_url="/regions",
     ))
@@ -46,7 +57,7 @@ async def regions_list(request: Request, q: str = "", page: int = 1):
 async def deleted_regions(request: Request):
     _, deleted = await fetch_split(RegionAPI)
     partners, region_types = await _region_context()
-    return templates.TemplateResponse("regions/deleted.html", _ctx(
+    return templates.TemplateResponse("regions/deleted.html", template_ctx(
         request, regions=deleted, partners=partners, region_types=region_types,
     ))
 
@@ -54,7 +65,7 @@ async def deleted_regions(request: Request):
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
     partners, region_types = await _region_context()
-    return templates.TemplateResponse("regions/add.html", _ctx(
+    return templates.TemplateResponse("regions/add.html", template_ctx(
         request, partners=partners, region_types=region_types,
     ))
 
@@ -76,10 +87,20 @@ async def add_region(
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
 async def edit_form(request: Request, record_id: int):
-    async with RegionAPI() as api:
-        region = await api.read(record_id)
-    partners, region_types = await _region_context()
-    return templates.TemplateResponse("regions/edit.html", _ctx(
+    async def _read_region():
+        async with RegionAPI() as api:
+            return await api.read(record_id)
+
+    async def _partners_only():
+        async with PartnerAPI() as api:
+            return await api.list()
+
+    region, partners, region_types = await asyncio.gather(
+        _read_region(),
+        _partners_only(),
+        region_types_list_cached(),
+    )
+    return templates.TemplateResponse("regions/edit.html", template_ctx(
         request, region=region, partners=partners, region_types=region_types,
     ))
 
@@ -100,7 +121,7 @@ async def update_region(
         )
     partners, region_types = await _region_context()
     logger.info("Территория %s обновлена", record_id)
-    return templates.TemplateResponse("regions/edit.html", _ctx(
+    return templates.TemplateResponse("regions/edit.html", template_ctx(
         request, region=region, partners=partners, region_types=region_types,
         message="Запись успешно обновлена",
     ))

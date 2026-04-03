@@ -78,7 +78,7 @@ class BaseAPI:
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            # Один ретрай при 401/403: пытаемся обновить токены и повторить запрос
+            # Один ретрай при 401/403: обновляем токены и повторяем запрос
             if exc.response.status_code in (401, 403):
                 try:
                     await self.token_manager.refresh_tokens()
@@ -92,8 +92,16 @@ class BaseAPI:
                     )
                     response.raise_for_status()
                 except Exception:
-                    # если ретрай не помог — падаем в общий обработчик ниже
                     raise exc
+            else:
+                logger.error(
+                    "Ошибка %s при обращении к %s: %s",
+                    exc.response.status_code, url, exc,
+                )
+                raise HTTPException(
+                    status_code=exc.response.status_code,
+                    detail=f"Ошибка внешнего API: {exc.response.text}",
+                ) from exc
         except httpx.TimeoutException as exc:
             logger.error("Таймаут при обращении к %s: %s", url, exc)
             raise HTTPException(
@@ -105,15 +113,6 @@ class BaseAPI:
             raise HTTPException(
                 status_code=502,
                 detail="Не удалось подключиться к внешнему API.",
-            ) from exc
-        except httpx.HTTPStatusError as exc:
-            logger.error(
-                "Ошибка %s при обращении к %s: %s",
-                exc.response.status_code, url, exc,
-            )
-            raise HTTPException(
-                status_code=exc.response.status_code,
-                detail=f"Ошибка внешнего API: {exc.response.text}",
             ) from exc
 
         payload = response.json()

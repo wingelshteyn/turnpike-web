@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 
-from ..dependencies import templates
+from ..dependencies import template_ctx, templates
 
 os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
 
@@ -349,5 +349,5 @@ async def cameras_page(request: Request):
     safe_cameras = [{"id": c["id"], "name": c["name"]} for c in CAMERAS]
     return templates.TemplateResponse(
         "cameras/index.html",
-        {"request": request, "cameras": safe_cameras},
+        template_ctx(request, cameras=safe_cameras),
     )

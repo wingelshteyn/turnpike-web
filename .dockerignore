@@ -1,0 +1,12 @@
+.git
+.gitignore
+.cursor
+.pytest_cache
+**/__pycache__
+**/*.py[cod]
+.venv
+venv
+backend/.venv
+backend/users.json
+backend/sessions.json
+tests

@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    image: turnpike-web:latest
+    ports:
+      - "8001:8001"
+    environment:
+      # За HTTPS-прокси (nginx, traefik) включите:
+      # COOKIE_SECURE: "true"
+      TURNPIKE_DATA_DIR: /data
+    volumes:
+      - turnpike_data:/data
+    restart: unless-stopped
+
+volumes:
+  turnpike_data:
