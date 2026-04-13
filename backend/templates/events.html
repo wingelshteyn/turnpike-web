@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}События{% endblock %}
+
+{% block content %}
+<div class="container events-page">
+  <h1>События</h1>
+  <p class="events-intro">Журнал действий в приложении (демо-данные).</p>
+
+  <div class="events-bar">
+    <div class="events-bar-left">
+      <label class="visually-hidden" for="eventsSearch">Поиск</label>
+      <input type="search" id="eventsSearch" name="events_log_q" class="events-search-input" placeholder="Поиск по тексту…" autocomplete="off" autocorrect="off" spellcheck="false" readonly>
+      <span class="events-meta" id="eventsCountLabel"></span>
+    </div>
+    <button type="button" class="btn btn-outline btn-sm" id="eventsFiltersBtn">Фильтры и экспорт</button>
+  </div>
+
+  <div class="events-legend" role="region" aria-label="Обозначения цветов">
+    <div class="events-legend-group">
+      <span class="events-legend-title">Важность</span>
+      <span class="events-legend-item"><span class="events-legend-swatch events-legend-swatch--sev-0" aria-hidden="true"></span> Норма</span>
+      <span class="events-legend-item"><span class="events-legend-swatch events-legend-swatch--sev-1" aria-hidden="true"></span> Внимание</span>
+      <span class="events-legend-item"><span class="events-legend-swatch events-legend-swatch--sev-2" aria-hidden="true"></span> Высокая</span>
+    </div>
+    <div class="events-legend-group">
+      <span class="events-legend-title">Статус</span>
+      <span class="events-legend-item"><span class="events-legend-swatch events-legend-swatch--st-new" aria-hidden="true"></span> Новое</span>
+      <span class="events-legend-item"><span class="events-legend-swatch events-legend-swatch--st-done" aria-hidden="true"></span> Обработано</span>
+      <span class="events-legend-item"><span class="events-legend-swatch events-legend-swatch--st-closed" aria-hidden="true"></span> Закрыто</span>
+    </div>
+  </div>
+
+  <div class="events-table-wrap">
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th class="events-col-time">Время</th>
+          <th>Событие</th>
+          <th class="events-col-src">Источник</th>
+          <th class="events-col-sev">Важность</th>
+          <th class="events-col-st">Статус</th>
+        </tr>
+      </thead>
+      <tbody id="eventsTableBody">
+        {% if journal_rows %}
+        {% for row in journal_rows %}
+        <tr
+          data-source="{{ row.device }}"
+          data-status="{{ row.status }}"
+          data-search="{{ row.search_blob|e }}"
+        >
+          <td class="events-col-time"><time datetime="">{{ row.dt }}</time></td>
+          <td>
+            <div class="events-title">{{ row.event }}</div>
+            <div class="events-detail">{{ row.detail }}</div>
+          </td>
+          <td class="events-col-src">{{ row.device }}</td>
+          <td class="events-col-badge">
+            <span class="events-badge events-badge--sev-{{ row.sev }}">{{ row.sev_label }}</span>
+          </td>
+          <td class="events-col-badge">
+            <span class="events-badge events-badge--st-{{ row.st_mod }}">{{ row.status }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        {% include "partials/events_demo_fallback.html" %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="search-overlay" id="eventsFiltersOverlay" aria-hidden="true">
+  <div class="search-modal events-filters-modal" role="dialog" aria-modal="true" aria-labelledby="eventsFiltersTitle">
+    <button type="button" class="search-modal-close" id="eventsFiltersClose" aria-label="Закрыть">×</button>
+    <div class="search-modal-wrapper">
+      <h2 id="eventsFiltersTitle">Фильтры и экспорт</h2>
+      <p class="events-filters-hint">Расширенная фильтрация и выгрузка CSV появятся при подключении журнала к серверу.</p>
+      <label for="filterSource">Источник</label>
+      <select id="filterSource" class="events-modal-field">
+        <option value="">Все</option>
+        <option>Веб-приложение</option>
+        <option>API Аксиома24</option>
+        <option>Камеры</option>
+        <option>Авторизация</option>
+        <option>Импорт CSV</option>
+      </select>
+      <label for="filterStatus">Статус</label>
+      <select id="filterStatus" class="events-modal-field">
+        <option value="">Все</option>
+        <option>Новое</option>
+        <option>Обработано</option>
+        <option>Закрыто</option>
+      </select>
+      <label for="filterFrom">Период с</label>
+      <input type="date" id="filterFrom" class="events-modal-field">
+      <label for="filterTo">по</label>
+      <input type="date" id="filterTo" class="events-modal-field">
+      <div class="search-modal-actions">
+        <button type="button" class="btn-search" id="eventsFiltersApply">Готово</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/events-page.js') }}?v=8"></script>
+{% endblock %}

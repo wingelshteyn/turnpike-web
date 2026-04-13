@@ -6,7 +6,8 @@
   <title>{% block title %}Web Application{% endblock %}</title>
   <meta name="csrf-token" content="{{ request.state.csrf_token | default('') }}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=5">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=12">
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
 
@@ -20,12 +21,14 @@
       <span class="sidebar-user-name">{{ username }}</span>
     </div>
     {% else %}
-    <a href="/auth" class="auth-icon" title="Авторизация">
+    <a href="/" class="auth-icon" title="Авторизация">
       <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9.24 2 7 4.24 7 7C7 9.76 9.24 12 12 12C14.76 12 17 9.76 17 7C17 4.24 14.76 2 12 2ZM12 14C8.69 14 6 16.69 6 20V22H18V20C18 16.69 15.31 14 12 14Z" fill="currentColor"/></svg>
     </a>
     {% endif %}
     <hr class="sidebar-divider">
     <a href="/cameras" class="sidebar-section-link">Камеры</a>
+    <a href="/analytics" class="sidebar-section-link">Аналитика</a>
+    <a href="/events" class="sidebar-section-link">События</a>
     <hr class="sidebar-divider">
     <span class="sidebar-icon">Справочники</span>
     <a href="/">Типы партнёров</a>
@@ -63,6 +66,7 @@
 
 <script src="{{ url_for('static', path='js/scripts.js') }}"></script>
 <script src="{{ url_for('static', path='js/particles.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
 <script>
   (function () {
     const meta = document.querySelector('meta[name="csrf-token"]');

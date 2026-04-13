@@ -12,6 +12,7 @@ from .houses import router as houses_router
 from .contact_types import router as contact_types_router
 from .clients import router as clients_router
 from .contacts import router as contacts_router
+from .analytics_pages import router as analytics_pages_router
 
 __all__ = [
     "auth_router",
@@ -26,4 +27,5 @@ __all__ = [
     "contact_types_router",
     "clients_router",
     "contacts_router",
+    "analytics_pages_router",
 ]

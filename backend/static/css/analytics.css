@@ -1,0 +1,146 @@
+/**
+ * Аналитика и события — те же токены, что и в styles.css (тёмная тема, teal).
+ */
+.analytics-page {
+  max-width: 1200px;
+}
+
+.analytics-page .page-lead {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+  max-width: 52ch;
+}
+
+/* KPI */
+.analytics-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.analytics-kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 14px 16px;
+  transition: border-color var(--transition-fast);
+}
+
+.analytics-kpi-card:hover {
+  border-color: var(--text-muted);
+}
+
+.analytics-kpi-card .label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.analytics-kpi-card .value {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.analytics-kpi-card .sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.analytics-kpi-card.accent .value { color: var(--primary-light); }
+.analytics-kpi-card.green .value { color: var(--success-color); }
+.analytics-kpi-card.orange .value { color: var(--warning-color); }
+.analytics-kpi-card.purple .value { color: #a78bfa; }
+.analytics-kpi-card.red .value { color: var(--error-color); }
+
+/* Charts */
+.analytics-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .analytics-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.analytics-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 16px;
+}
+
+.analytics-chart-card.chart-full {
+  grid-column: 1 / -1;
+}
+
+.analytics-chart-card .card-header-an {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.analytics-chart-card .card-title-an {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.analytics-chart-wrap {
+  position: relative;
+  height: 260px;
+}
+
+.analytics-chart-wrap.chart-line {
+  height: 200px;
+}
+
+/* Heatmap */
+.analytics-heatmap-grid {
+  display: grid;
+  grid-template-columns: 40px repeat(24, 1fr);
+  gap: 2px;
+  font-size: 10px;
+}
+
+.analytics-heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  min-height: 14px;
+  transition: opacity 0.15s ease;
+}
+
+.analytics-heatmap-cell:hover {
+  opacity: 0.85;
+  outline: 1px solid var(--primary-light);
+}
+
+.analytics-heatmap-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.analytics-heatmap-hour {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 9px;
+  padding: 2px 0;
+}

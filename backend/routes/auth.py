@@ -29,16 +29,16 @@ def _set_session_cookie(response, session_id: str):
     )
 
 
-@router.get("/auth", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def auth_form(request: Request):
     """Страница авторизации."""
     session_id = request.cookies.get("session")
     if get_session(session_id):
-        return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url="/analytics", status_code=status.HTTP_302_FOUND)
     return templates.TemplateResponse("auth.html", {"request": request})
 
 
-@router.post("/auth", response_class=HTMLResponse)
+@router.post("/", response_class=HTMLResponse)
 async def auth_login(
     request: Request,
     username: str = Form(...),
@@ -49,7 +49,7 @@ async def auth_login(
     # --- 1. Проверяем локальное хранилище пользователей ---
     local_user = local_authenticate(username, password)
     if local_user:
-        response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+        response = RedirectResponse(url="/analytics", status_code=status.HTTP_303_SEE_OTHER)
         sess = create_session(username=local_user["username"], role=local_user["role"])
         _set_session_cookie(response, sess.session_id)
         logger.info("Локальный пользователь %s авторизован (роль: %s)", username, local_user["role"])
@@ -60,7 +60,7 @@ async def auth_login(
         token_manager = TokenManager(username=username, password=password)
         await token_manager.authenticate()
 
-        response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+        response = RedirectResponse(url="/analytics", status_code=status.HTTP_303_SEE_OTHER)
         # Создаём серверную сессию (username/role тут минимальные)
         sess = create_session(username=username, role="USER")
         _set_session_cookie(response, sess.session_id)
@@ -78,7 +78,7 @@ async def auth_login(
 @router.get("/logout")
 async def logout(request: Request):
     """Выход из системы — удаление куки и редирект на страницу авторизации."""
-    response = RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
+    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
     delete_session(request.cookies.get("session"))
     response.delete_cookie("session")
     logger.info("Пользователь вышел из системы")

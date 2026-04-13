@@ -14,7 +14,7 @@ python -m pip install -r backend/requirements.txt
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
 ```
 
-Откройте `http://127.0.0.1:8001/auth` и войдите `admin / admin`.
+Откройте `http://127.0.0.1:8001/` и войдите `admin / admin`.
 
 **Важно для сервера:** команду `uvicorn` нужно запускать **из корня репозитория** (рядом с папкой `backend/`), а не из `backend/`. Иначе пакет `backend` не найдётся, а `python main.py` из каталога `backend/` сломается на относительных импортах. В systemd/docker задайте `WorkingDirectory` / `WORKDIR` на корень проекта.
 

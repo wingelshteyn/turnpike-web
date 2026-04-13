@@ -16,7 +16,7 @@ def test_health_ok():
 def test_unauthenticated_root_redirects_to_auth():
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 302
-    assert r.headers.get("location") == "/auth"
+    assert r.headers.get("location") == "/"
 
 
 def test_static_mount_exists():

@@ -12,6 +12,7 @@ from starlette.status import HTTP_403_FORBIDDEN
 from .config import STATIC_DIR
 from .session_store import get_session, init_session_store
 from .routes import (
+    analytics_pages_router,
     auth_router,
     cameras_router,
     cities_router,
@@ -43,12 +44,12 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # --- Middleware: проверка аутентификации ---
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    """Проверяет валидность сессии. Без авторизации доступна только /auth и статика."""
+    """Проверяет валидность сессии. Без авторизации доступна только / и статика."""
     path = request.url.path
 
     # Разрешаем доступ без авторизации
     if (
-        path in ("/auth", "/favicon.ico", "/health")
+        path in ("/", "/favicon.ico", "/health")
         or path.startswith("/static/")
     ):
         return await call_next(request)
@@ -56,7 +57,7 @@ async def auth_middleware(request: Request, call_next):
     session_id = request.cookies.get("session")
     sess = get_session(session_id)
     if not sess:
-        return RedirectResponse(url="/auth", status_code=302)
+        return RedirectResponse(url="/", status_code=302)
 
     # CSRF-защита для небезопасных методов (HTML-формы)
     if request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:
@@ -94,6 +95,7 @@ app.include_router(contact_types_router)
 app.include_router(clients_router)
 app.include_router(contacts_router)
 app.include_router(cameras_router)
+app.include_router(analytics_pages_router)
 
 
 @app.get("/health", include_in_schema=False)
