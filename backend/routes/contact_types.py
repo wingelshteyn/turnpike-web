@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from ..api import ContactTypeAPI
 from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..url_prefix import redirect as prefixed_redirect
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +41,11 @@ async def add_form(request: Request):
 
 
 @router.post("/add")
-async def add_contact_type(code: str = Form(""), name: str = Form("")):
+async def add_contact_type(request: Request, code: str = Form(""), name: str = Form("")):
     async with ContactTypeAPI() as api:
         await api.create(code=code, name=name)
     logger.info("Создан тип контакта: code=%s, name=%s", code, name)
-    return RedirectResponse(url="/contact-types", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/contact-types", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
@@ -72,19 +73,19 @@ async def update_contact_type(
 
 
 @router.post("/delete/{record_id:int}")
-async def delete_contact_type(record_id: int):
+async def delete_contact_type(request: Request, record_id: int):
     async with ContactTypeAPI() as api:
         record = await api.read(record_id)
         if record.get("deleted"):
             raise HTTPException(status_code=400, detail="Запись уже удалена")
         await api.delete(record_id)
     logger.info("Удалён тип контакта %s", record_id)
-    return RedirectResponse(url="/contact-types", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/contact-types", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/restore/{record_id:int}")
-async def restore_contact_type(record_id: int):
+async def restore_contact_type(request: Request, record_id: int):
     async with ContactTypeAPI() as api:
         await api.restore(record_id)
     logger.info("Восстановлен тип контакта %s", record_id)
-    return RedirectResponse(url="/contact-types", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/contact-types", status_code=status.HTTP_303_SEE_OTHER)

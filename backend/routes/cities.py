@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from ..api import CityAPI
 from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..url_prefix import redirect as prefixed_redirect
 from ..reference_cache import invalidate_cities_cache
 
 logger = logging.getLogger(__name__)
@@ -41,12 +42,12 @@ async def add_form(request: Request):
 
 
 @router.post("/add")
-async def add_city(name: str = Form(...)):
+async def add_city(request: Request, name: str = Form(...)):
     async with CityAPI() as api:
         await api.create(name=name)
     invalidate_cities_cache()
     logger.info("Создан город %s", name)
-    return RedirectResponse(url="/cities", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/cities", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
@@ -74,7 +75,7 @@ async def update_city(
 
 
 @router.post("/delete/{record_id:int}")
-async def delete_city(record_id: int):
+async def delete_city(request: Request, record_id: int):
     async with CityAPI() as api:
         record = await api.read(record_id)
         if record.get("deleted"):
@@ -82,13 +83,13 @@ async def delete_city(record_id: int):
         await api.delete(record_id)
     invalidate_cities_cache()
     logger.info("Удалена запись %s", record_id)
-    return RedirectResponse(url="/cities", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/cities", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/restore/{record_id:int}")
-async def restore_city(record_id: int):
+async def restore_city(request: Request, record_id: int):
     async with CityAPI() as api:
         await api.restore(record_id)
     invalidate_cities_cache()
     logger.info("Восстановлена запись %s", record_id)
-    return RedirectResponse(url="/cities", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/cities", status_code=status.HTTP_303_SEE_OTHER)

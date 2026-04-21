@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from ..api import ClientAPI
 from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..url_prefix import redirect as prefixed_redirect
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ async def add_form(request: Request):
 
 @router.post("/add")
 async def add_client(
+    request: Request,
     name: str = Form(""),
     place: str = Form(""),
     house: Optional[str] = Form(None),
@@ -51,7 +53,7 @@ async def add_client(
     async with ClientAPI() as api:
         await api.create(name=name, place=place, house=house_int, apart=apart or None)
     logger.info("Создан клиент: %s", name)
-    return RedirectResponse(url="/clients", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/clients", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
@@ -83,19 +85,19 @@ async def update_client(
 
 
 @router.post("/delete/{record_id:int}")
-async def delete_client(record_id: int):
+async def delete_client(request: Request, record_id: int):
     async with ClientAPI() as api:
         record = await api.read(record_id)
         if record.get("deleted"):
             raise HTTPException(status_code=400, detail="Запись уже удалена")
         await api.delete(record_id)
     logger.info("Удалён клиент %s", record_id)
-    return RedirectResponse(url="/clients", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/clients", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/restore/{record_id:int}")
-async def restore_client(record_id: int):
+async def restore_client(request: Request, record_id: int):
     async with ClientAPI() as api:
         await api.restore(record_id)
     logger.info("Восстановлен клиент %s", record_id)
-    return RedirectResponse(url="/clients", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/clients", status_code=status.HTTP_303_SEE_OTHER)

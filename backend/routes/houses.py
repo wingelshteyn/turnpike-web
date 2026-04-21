@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from ..api import HouseAPI, StreetAPI
 from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, normalize_streets_for_template, paginate
+from ..url_prefix import redirect as prefixed_redirect
 from ..reference_cache import cities_list as cities_list_cached
 
 logger = logging.getLogger(__name__)
@@ -88,11 +89,11 @@ async def add_form(request: Request):
 
 
 @router.post("/add")
-async def add_house(street: int = Form(...), number: str = Form(...)):
+async def add_house(request: Request, street: int = Form(...), number: str = Form(...)):
     async with HouseAPI() as api:
         await api.create(street=street, number=number)
     logger.info("Создан дом %s", number)
-    return RedirectResponse(url="/houses", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/houses", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
@@ -132,19 +133,19 @@ async def update_house(
 
 
 @router.post("/delete/{record_id:int}")
-async def delete_house(record_id: int):
+async def delete_house(request: Request, record_id: int):
     async with HouseAPI() as api:
         record = await api.read(record_id)
         if record.get("deleted"):
             raise HTTPException(status_code=400, detail="Запись уже удалена")
         await api.delete(record_id)
     logger.info("Удалена запись %s", record_id)
-    return RedirectResponse(url="/houses", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/houses", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/restore/{record_id:int}")
-async def restore_house(record_id: int):
+async def restore_house(request: Request, record_id: int):
     async with HouseAPI() as api:
         await api.restore(record_id)
     logger.info("Восстановлена запись %s", record_id)
-    return RedirectResponse(url="/houses", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/houses", status_code=status.HTTP_303_SEE_OTHER)

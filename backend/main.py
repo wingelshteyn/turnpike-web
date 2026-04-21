@@ -10,6 +10,7 @@ from starlette.responses import RedirectResponse, Response
 from starlette.status import HTTP_403_FORBIDDEN
 
 from .config import STATIC_DIR
+from .url_prefix import normalize_prefix, redirect as prefixed_redirect
 from .session_store import get_session, init_session_store
 from .routes import (
     analytics_pages_router,
@@ -37,6 +38,21 @@ app = FastAPI()
 init_users()
 init_session_store()
 
+# --- Middleware: учёт префикса reverse-proxy (nginx) ---
+@app.middleware("http")
+async def forwarded_prefix_middleware(request: Request, call_next):
+    """
+    Если nginx публикует приложение на подпути (например, /gui/gate/),
+    он должен передавать X-Forwarded-Prefix: /gui/gate.
+
+    Тогда `url_for()` в шаблонах и редиректы смогут корректно формировать URL.
+    """
+    prefix = request.headers.get("x-forwarded-prefix")
+    if prefix:
+        request.scope["root_path"] = normalize_prefix(prefix)
+    return await call_next(request)
+
+
 # --- Статические файлы ---
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -57,7 +73,7 @@ async def auth_middleware(request: Request, call_next):
     session_id = request.cookies.get("session")
     sess = get_session(session_id)
     if not sess:
-        return RedirectResponse(url="/", status_code=302)
+        return prefixed_redirect(request, "/", status_code=302)
 
     # CSRF-защита для небезопасных методов (HTML-формы)
     if request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:

@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from ..api import RegionTypeAPI
 from ..dependencies import template_ctx, templates
 from ..helpers import fetch_split, filter_by_query, paginate
+from ..url_prefix import redirect as prefixed_redirect
 from ..reference_cache import invalidate_region_types_cache
 
 logger = logging.getLogger(__name__)
@@ -40,12 +41,12 @@ async def add_form(request: Request):
 
 
 @router.post("/add")
-async def add_region_type(type: str = Form(...), name: str = Form(...)):
+async def add_region_type(request: Request, type: str = Form(...), name: str = Form(...)):
     async with RegionTypeAPI() as api:
         await api.create(brief=type, name=name)
     invalidate_region_types_cache()
     logger.info("Создан тип территории %s / %s", type, name)
-    return RedirectResponse(url="/region-types", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/region-types", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/edit/{record_id:int}", response_class=HTMLResponse)
@@ -75,7 +76,7 @@ async def update_region_type(
 
 
 @router.post("/delete/{record_id:int}")
-async def delete_region_type(record_id: int):
+async def delete_region_type(request: Request, record_id: int):
     async with RegionTypeAPI() as api:
         record = await api.read(record_id)
         if record.get("deleted"):
@@ -83,13 +84,13 @@ async def delete_region_type(record_id: int):
         await api.delete(record_id)
     invalidate_region_types_cache()
     logger.info("Удалена запись %s", record_id)
-    return RedirectResponse(url="/region-types", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/region-types", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/restore/{record_id:int}")
-async def restore_region_type(record_id: int):
+async def restore_region_type(request: Request, record_id: int):
     async with RegionTypeAPI() as api:
         await api.restore(record_id)
     invalidate_region_types_cache()
     logger.info("Восстановлена запись %s", record_id)
-    return RedirectResponse(url="/region-types", status_code=status.HTTP_303_SEE_OTHER)
+    return prefixed_redirect(request, "/region-types", status_code=status.HTTP_303_SEE_OTHER)

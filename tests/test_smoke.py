@@ -15,8 +15,8 @@ def test_health_ok():
 
 def test_unauthenticated_root_redirects_to_auth():
     r = client.get("/", follow_redirects=False)
-    assert r.status_code == 302
-    assert r.headers.get("location") == "/"
+    # "/" — это страница логина, должна быть доступна без сессии
+    assert r.status_code == 200
 
 
 def test_static_mount_exists():

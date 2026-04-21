@@ -4,7 +4,7 @@
 <div class="container">
   <h1>Удалённые типы партнёров</h1>
 
-  <p><a href="/" class="btn btn-outline">← Назад</a></p>
+  <p><a href="/partner-types/" class="btn btn-outline">← Назад</a></p>
 
   <table class="data-table">
     <thead>
@@ -24,7 +24,7 @@
       <td>{{ p.get('Name', '—') or '—' }}</td>
       <td>{{ p.get('deleted', '—') or '—' }}</td>
       <td>
-        <form method="post" action="/restore/{{ p['id'] }}" class="inline">
+        <form method="post" action="/partner-types/restore/{{ p['id'] }}" class="inline">
           <button type="submit" class="btn btn-restore">Восстановить</button>
         </form>
       </td>
