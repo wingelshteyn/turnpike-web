@@ -36,7 +36,7 @@ async def auth_form(request: Request):
     session_id = request.cookies.get("session")
     if get_session(session_id):
         return prefixed_redirect(request, "/analytics", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse("auth.html", {"request": request})
+    return templates.TemplateResponse(request, "auth.html", {"error": None})
 
 
 @router.post("/", response_class=HTMLResponse)
@@ -71,8 +71,9 @@ async def auth_login(
     except RuntimeError as e:
         logger.error("Ошибка авторизации: %s", str(e))
         return templates.TemplateResponse(
+            request,
             "auth.html",
-            {"request": request, "error": "Неверное имя пользователя или пароль"},
+            {"error": "Неверное имя пользователя или пароль"},
         )
 
 
