@@ -1,9 +1,28 @@
 """
 Vercel Serverless Function entrypoint.
 
-Vercel ожидает Python handler внутри директории `api/`.
-Мы экспортируем ASGI-приложение FastAPI как `app`.
+Vercel ожидает ASGI/WSGI приложение верхнего уровня с именем `app`
+в одном из entrypoint'ов (в т.ч. `api/index.py`).
 """
 
-from backend.main import app  # noqa: F401
+from __future__ import annotations
+
+import traceback
+
+from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
+
+
+try:
+    from backend.main import app  # type: ignore  # noqa: F401
+except Exception as exc:  # pragma: no cover
+    # Важно: если импорт упал, Vercel иначе просто покажет FUNCTION_INVOCATION_FAILED.
+    # Делаем минимальный app, который вернёт traceback (для диагностики).
+    _err = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    app = FastAPI()
+
+    @app.get("/health", include_in_schema=False)
+    @app.get("/__vercel_error", include_in_schema=False)
+    async def __vercel_error():
+        return PlainTextResponse(_err, status_code=500)
 
