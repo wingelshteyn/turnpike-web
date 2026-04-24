@@ -24,6 +24,7 @@ async def contacts_list(request: Request, q: str = "", page: int = 1):
     filtered = filter_by_query(raw, q, ["id", "Client", "ContactType", "Contact", "created"])
     items, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
+        request,
         "contacts/index.html",
         template_ctx(request, items=items, q=q, page=page, total_pages=total_pages, base_url="/contacts"),
     )
@@ -33,6 +34,7 @@ async def contacts_list(request: Request, q: str = "", page: int = 1):
 async def deleted_contacts(request: Request):
     _, deleted = await fetch_split(ContactAPI)
     return templates.TemplateResponse(
+        request,
         "contacts/deleted.html", template_ctx(request, items=deleted),
     )
 
@@ -48,7 +50,7 @@ async def add_form(request: Request):
             return await api.case()
 
     clients, contact_types = await asyncio.gather(_clients(), _types())
-    return templates.TemplateResponse("contacts/add.html", template_ctx(
+    return templates.TemplateResponse(request, "contacts/add.html", template_ctx(
         request,
         clients=clients,
         contact_types=contact_types,
@@ -83,7 +85,7 @@ async def edit_form(request: Request, record_id: int):
             return await api.case()
 
     item, clients, contact_types = await asyncio.gather(_read_item(), _clients(), _types())
-    return templates.TemplateResponse("contacts/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "contacts/edit.html", template_ctx(
         request,
         item=item,
         clients=clients,
@@ -110,7 +112,7 @@ async def update_contact(
         item = await api.update(record_id, client_id=client_id, contact_type_id=contact_type_id, contact=contact)
     clients, contact_types = await asyncio.gather(_clients(), _types())
     logger.info("Контакт %s обновлён", record_id)
-    return templates.TemplateResponse("contacts/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "contacts/edit.html", template_ctx(
         request,
         item=item,
         clients=clients,

@@ -22,6 +22,7 @@ async def contact_types_list(request: Request, q: str = "", page: int = 1):
     filtered = filter_by_query(raw, q, ["id", "Code", "Name", "created"])
     items, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
+        request,
         "contact_types/index.html",
         template_ctx(request, items=items, q=q, page=page, total_pages=total_pages, base_url="/contact-types"),
     )
@@ -31,13 +32,14 @@ async def contact_types_list(request: Request, q: str = "", page: int = 1):
 async def deleted_contact_types(request: Request):
     _, deleted = await fetch_split(ContactTypeAPI)
     return templates.TemplateResponse(
+        request,
         "contact_types/deleted.html", template_ctx(request, items=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("contact_types/add.html", template_ctx(request))
+    return templates.TemplateResponse(request, "contact_types/add.html", template_ctx(request))
 
 
 @router.post("/add")
@@ -53,6 +55,7 @@ async def edit_form(request: Request, record_id: int):
     async with ContactTypeAPI() as api:
         item = await api.read(record_id)
     return templates.TemplateResponse(
+        request,
         "contact_types/edit.html", template_ctx(request, item=item),
     )
 
@@ -65,7 +68,7 @@ async def update_contact_type(
     async with ContactTypeAPI() as api:
         item = await api.update(record_id, code=code, name=name)
     logger.info("Тип контакта %s обновлён", record_id)
-    return templates.TemplateResponse("contact_types/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "contact_types/edit.html", template_ctx(
         request,
         item=item,
         message="Запись успешно обновлена",

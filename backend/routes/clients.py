@@ -23,6 +23,7 @@ async def clients_list(request: Request, q: str = "", page: int = 1):
     filtered = filter_by_query(raw, q, ["id", "Name", "Place", "House", "Apart", "created"])
     items, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
+        request,
         "clients/index.html",
         template_ctx(request, items=items, q=q, page=page, total_pages=total_pages, base_url="/clients"),
     )
@@ -32,13 +33,14 @@ async def clients_list(request: Request, q: str = "", page: int = 1):
 async def deleted_clients(request: Request):
     _, deleted = await fetch_split(ClientAPI)
     return templates.TemplateResponse(
+        request,
         "clients/deleted.html", template_ctx(request, items=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("clients/add.html", template_ctx(request))
+    return templates.TemplateResponse(request, "clients/add.html", template_ctx(request))
 
 
 @router.post("/add")
@@ -61,6 +63,7 @@ async def edit_form(request: Request, record_id: int):
     async with ClientAPI() as api:
         item = await api.read(record_id)
     return templates.TemplateResponse(
+        request,
         "clients/edit.html", template_ctx(request, item=item),
     )
 
@@ -77,7 +80,7 @@ async def update_client(
     async with ClientAPI() as api:
         item = await api.update(record_id, name=name, place=place, house=house_int, apart=apart or None)
     logger.info("Клиент %s обновлён", record_id)
-    return templates.TemplateResponse("clients/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "clients/edit.html", template_ctx(
         request,
         item=item,
         message="Запись успешно обновлена",

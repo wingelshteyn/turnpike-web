@@ -23,6 +23,7 @@ async def cities_list(request: Request, q: str = "", page: int = 1):
     filtered = filter_by_query(raw, q, ["id", "Name", "created"])
     cities, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
+        request,
         "cities/cities.html",
         template_ctx(request, cities=cities, q=q, page=page, total_pages=total_pages, base_url="/cities"),
     )
@@ -32,13 +33,14 @@ async def cities_list(request: Request, q: str = "", page: int = 1):
 async def deleted_cities(request: Request):
     _, deleted = await fetch_split(CityAPI)
     return templates.TemplateResponse(
+        request,
         "cities/deleted.html", template_ctx(request, cities=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("cities/add.html", template_ctx(request))
+    return templates.TemplateResponse(request, "cities/add.html", template_ctx(request))
 
 
 @router.post("/add")
@@ -55,6 +57,7 @@ async def edit_form(request: Request, record_id: int):
     async with CityAPI() as api:
         city = await api.read(record_id)
     return templates.TemplateResponse(
+        request,
         "cities/edit.html", template_ctx(request, city=city),
     )
 
@@ -67,7 +70,7 @@ async def update_city(
         city = await api.update(record_id, name=name)
     invalidate_cities_cache()
     logger.info("Город %s обновлён", record_id)
-    return templates.TemplateResponse("cities/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "cities/edit.html", template_ctx(
         request,
         city=city,
         message="Запись успешно обновлена",

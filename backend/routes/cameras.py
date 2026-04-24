@@ -358,6 +358,7 @@ async def cameras_snapshot():
 async def cameras_page(request: Request):
     safe_cameras = [{"id": c["id"], "name": c["name"]} for c in CAMERAS]
     return templates.TemplateResponse(
+        request,
         "cameras/index.html",
         template_ctx(request, cameras=safe_cameras),
     )

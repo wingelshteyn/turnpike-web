@@ -55,7 +55,7 @@ async def houses_list(request: Request, q: str = "", page: int = 1):
     street_names = _street_names(streets)
     filtered = filter_by_query(raw, q, ["id", "Number", "Street", "street", "f_Street", "created", "updated"])
     houses, total, total_pages = paginate(filtered, page)
-    return templates.TemplateResponse("houses/houses.html", template_ctx(
+    return templates.TemplateResponse(request, "houses/houses.html", template_ctx(
         request,
         houses=houses,
         streets=streets,
@@ -72,7 +72,7 @@ async def deleted_houses(request: Request):
     _, deleted = await fetch_split(HouseAPI)
     streets = await _streets_for_template(include_deleted=True)
     street_names = _street_names(streets)
-    return templates.TemplateResponse("houses/deleted.html", template_ctx(
+    return templates.TemplateResponse(request, "houses/deleted.html", template_ctx(
         request,
         houses=deleted,
         streets=streets,
@@ -84,6 +84,7 @@ async def deleted_houses(request: Request):
 async def add_form(request: Request):
     streets = await _streets_for_template(include_deleted=False)
     return templates.TemplateResponse(
+        request,
         "houses/add.html", template_ctx(request, streets=streets),
     )
 
@@ -106,7 +107,7 @@ async def edit_form(request: Request, record_id: int):
         _read_house(),
         _streets_for_template(include_deleted=False),
     )
-    return templates.TemplateResponse("houses/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "houses/edit.html", template_ctx(
         request,
         house=house,
         streets=streets,
@@ -124,7 +125,7 @@ async def update_house(
         house = await api.update(record_id, street=street, number=number)
     streets = await _streets_for_template(include_deleted=False)
     logger.info("Дом %s обновлён", record_id)
-    return templates.TemplateResponse("houses/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "houses/edit.html", template_ctx(
         request,
         house=house,
         streets=streets,

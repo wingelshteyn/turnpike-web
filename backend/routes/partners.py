@@ -35,7 +35,7 @@ async def partners_list(request: Request, q: str = "", page: int = 1):
     partner_type_names = _partner_type_names(partner_types)
     filtered = filter_by_query(raw, q, ["id", "Name", "PartnerType", "f_PartnerType", "created", "updated"])
     partners, total, total_pages = paginate(filtered, page)
-    return templates.TemplateResponse("partners/partners.html", template_ctx(
+    return templates.TemplateResponse(request, "partners/partners.html", template_ctx(
         request, partners=partners, partner_types=partner_types,
         partner_type_names=partner_type_names, q=q,
         page=page, total_pages=total_pages, base_url="/partners",
@@ -47,7 +47,7 @@ async def deleted_partners(request: Request):
     _, deleted = await fetch_split(PartnerAPI)
     partner_types = await partner_types_list_cached()
     partner_type_names = _partner_type_names(partner_types)
-    return templates.TemplateResponse("partners/deleted.html", template_ctx(
+    return templates.TemplateResponse(request, "partners/deleted.html", template_ctx(
         request, partners=deleted, partner_types=partner_types,
         partner_type_names=partner_type_names,
     ))
@@ -57,6 +57,7 @@ async def deleted_partners(request: Request):
 async def add_form(request: Request):
     partner_types = await partner_types_list_cached()
     return templates.TemplateResponse(
+        request,
         "partners/add.html", template_ctx(request, partner_types=partner_types),
     )
 
@@ -79,7 +80,7 @@ async def edit_form(request: Request, record_id: int):
         _read_partner(),
         partner_types_list_cached(),
     )
-    return templates.TemplateResponse("partners/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "partners/edit.html", template_ctx(
         request, partner=partner, partner_types=partner_types,
     ))
 
@@ -95,7 +96,7 @@ async def update_partner(
         partner = await api.update(record_id, partner_type=partner_type, name=name)
     partner_types = await partner_types_list_cached()
     logger.info("Партнёр %s обновлён", record_id)
-    return templates.TemplateResponse("partners/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "partners/edit.html", template_ctx(
         request, partner=partner, partner_types=partner_types,
         message="Запись успешно обновлена",
     ))

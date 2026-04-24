@@ -37,7 +37,7 @@ async def streets_list(request: Request, q: str = "", page: int = 1):
     streets_raw, cities = await _streets_with_cities(include_deleted=False)
     filtered = filter_by_query(streets_raw, q, ["id", "name", "City", "created", "updated"])
     streets, total, total_pages = paginate(filtered, page)
-    return templates.TemplateResponse("streets/streets.html", template_ctx(
+    return templates.TemplateResponse(request, "streets/streets.html", template_ctx(
         request,
         streets=streets,
         cities=cities,
@@ -52,7 +52,7 @@ async def streets_list(request: Request, q: str = "", page: int = 1):
 async def deleted_streets(request: Request):
     _, deleted = await fetch_split(StreetAPI)
     cities = await cities_list_cached(include_deleted=True)
-    return templates.TemplateResponse("streets/deleted.html", template_ctx(
+    return templates.TemplateResponse(request, "streets/deleted.html", template_ctx(
         request,
         streets=deleted,
         cities=cities,
@@ -63,6 +63,7 @@ async def deleted_streets(request: Request):
 async def add_form(request: Request):
     cities = await cities_list_cached(include_deleted=False)
     return templates.TemplateResponse(
+        request,
         "streets/add.html", template_ctx(request, cities=cities),
     )
 
@@ -85,7 +86,7 @@ async def edit_form(request: Request, record_id: int):
         _read_street(),
         cities_list_cached(include_deleted=False),
     )
-    return templates.TemplateResponse("streets/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "streets/edit.html", template_ctx(
         request,
         street=street,
         cities=cities,
@@ -103,7 +104,7 @@ async def update_street(
         street = await api.update(record_id, city=city, name=name)
     cities = await cities_list_cached(include_deleted=False)
     logger.info("Улица %s обновлена", record_id)
-    return templates.TemplateResponse("streets/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "streets/edit.html", template_ctx(
         request,
         street=street,
         cities=cities,

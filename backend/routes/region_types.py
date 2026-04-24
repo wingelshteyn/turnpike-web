@@ -22,6 +22,7 @@ async def region_types_list(request: Request, q: str = "", page: int = 1):
     filtered = filter_by_query(active, q, ["id", "Brief", "Name", "created"])
     territories, total, total_pages = paginate(filtered, page)
     return templates.TemplateResponse(
+        request,
         "region_types/territories.html",
         template_ctx(request, territories=territories, q=q, page=page, total_pages=total_pages, base_url="/region-types"),
     )
@@ -31,13 +32,14 @@ async def region_types_list(request: Request, q: str = "", page: int = 1):
 async def deleted_region_types(request: Request):
     _, deleted = await fetch_split(RegionTypeAPI)
     return templates.TemplateResponse(
+        request,
         "region_types/deleted.html", template_ctx(request, regions=deleted),
     )
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("region_types/add.html", template_ctx(request))
+    return templates.TemplateResponse(request, "region_types/add.html", template_ctx(request))
 
 
 @router.post("/add")
@@ -54,6 +56,7 @@ async def edit_form(request: Request, record_id: int):
     async with RegionTypeAPI() as api:
         region = await api.read(record_id)
     return templates.TemplateResponse(
+        request,
         "region_types/edit.html", template_ctx(request, region=region),
     )
 
@@ -70,6 +73,7 @@ async def update_region_type(
     invalidate_region_types_cache()
     logger.info("Тип территории %s обновлён", record_id)
     return templates.TemplateResponse(
+        request,
         "region_types/edit.html",
         template_ctx(request, region=region, message="Запись обновлена"),
     )

@@ -22,6 +22,7 @@ async def partner_types_list(request: Request, q: str = "", page: int = 1):
     active = filter_by_query(active, q, ["id", "Brief", "Name", "city", "code", "created"])
     items, total, total_pages = paginate(active, page)
     return templates.TemplateResponse(
+        request,
         "index.html",
         template_ctx(
             request,
@@ -37,12 +38,12 @@ async def partner_types_list(request: Request, q: str = "", page: int = 1):
 @router.get("/deleted", response_class=HTMLResponse)
 async def deleted_partner_types(request: Request):
     _, deleted = await fetch_split(PartnerTypeAPI)
-    return templates.TemplateResponse("deleted.html", template_ctx(request, partners=deleted))
+    return templates.TemplateResponse(request, "deleted.html", template_ctx(request, partners=deleted))
 
 
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
-    return templates.TemplateResponse("add.html", template_ctx(request))
+    return templates.TemplateResponse(request, "add.html", template_ctx(request))
 
 
 @router.post("/add")
@@ -58,7 +59,7 @@ async def add_partner_type(request: Request, type: str = Form(...), name: str = 
 async def edit_form(request: Request, record_id: int):
     async with PartnerTypeAPI() as api:
         partner = await api.read(record_id)
-    return templates.TemplateResponse("edit.html", template_ctx(request, partner=partner))
+    return templates.TemplateResponse(request, "edit.html", template_ctx(request, partner=partner))
 
 
 @router.post("/edit/{record_id:int}")
@@ -73,6 +74,7 @@ async def update_partner_type(
     invalidate_partner_types_cache()
     logger.info("Запись %s обновлена", record_id)
     return templates.TemplateResponse(
+        request,
         "edit.html",
         template_ctx(request, partner=partner, message="Запись успешно обновлена"),
     )

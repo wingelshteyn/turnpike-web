@@ -48,7 +48,7 @@ async def regions_list(request: Request, q: str = "", page: int = 1):
     )
     filtered = filter_by_query(raw, q, ["id", "Name", "Place", "Partner", "RegionType", "created"])
     regions, total, total_pages = paginate(filtered, page)
-    return templates.TemplateResponse("regions/regions.html", template_ctx(
+    return templates.TemplateResponse(request, "regions/regions.html", template_ctx(
         request, regions=regions, partners=partners, region_types=region_types, q=q,
         page=page, total_pages=total_pages, base_url="/regions",
     ))
@@ -58,7 +58,7 @@ async def regions_list(request: Request, q: str = "", page: int = 1):
 async def deleted_regions(request: Request):
     _, deleted = await fetch_split(RegionAPI)
     partners, region_types = await _region_context()
-    return templates.TemplateResponse("regions/deleted.html", template_ctx(
+    return templates.TemplateResponse(request, "regions/deleted.html", template_ctx(
         request, regions=deleted, partners=partners, region_types=region_types,
     ))
 
@@ -66,7 +66,7 @@ async def deleted_regions(request: Request):
 @router.get("/add", response_class=HTMLResponse)
 async def add_form(request: Request):
     partners, region_types = await _region_context()
-    return templates.TemplateResponse("regions/add.html", template_ctx(
+    return templates.TemplateResponse(request, "regions/add.html", template_ctx(
         request, partners=partners, region_types=region_types,
     ))
 
@@ -102,7 +102,7 @@ async def edit_form(request: Request, record_id: int):
         _partners_only(),
         region_types_list_cached(),
     )
-    return templates.TemplateResponse("regions/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "regions/edit.html", template_ctx(
         request, region=region, partners=partners, region_types=region_types,
     ))
 
@@ -123,7 +123,7 @@ async def update_region(
         )
     partners, region_types = await _region_context()
     logger.info("Территория %s обновлена", record_id)
-    return templates.TemplateResponse("regions/edit.html", template_ctx(
+    return templates.TemplateResponse(request, "regions/edit.html", template_ctx(
         request, region=region, partners=partners, region_types=region_types,
         message="Запись успешно обновлена",
     ))
