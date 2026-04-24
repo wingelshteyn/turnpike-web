@@ -1,2 +1,9 @@
--r backend/requirements.txt
-
+fastapi
+aiofiles
+uvicorn[standard]
+httpx
+jinja2
+python-multipart
+opencv-python-headless>=4.8.0
+bcrypt
+pytest>=8.0
