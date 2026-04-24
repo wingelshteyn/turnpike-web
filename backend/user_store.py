@@ -47,13 +47,21 @@ def _verify_password(password: str, stored_hash: str) -> bool:
 
 
 def _load() -> dict:
-    if _USERS_FILE.exists():
-        return json.loads(_USERS_FILE.read_text("utf-8"))
+    try:
+        if _USERS_FILE.exists():
+            return json.loads(_USERS_FILE.read_text("utf-8"))
+    except Exception:
+        return {}
     return {}
 
 
 def _save(data: dict) -> None:
-    _USERS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+    try:
+        _USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _USERS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+    except Exception:
+        # best-effort: на serverless FS запись может быть недоступна
+        return
 
 
 # ------------------------------------------------------------------

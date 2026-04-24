@@ -56,7 +56,12 @@ def _load_from_disk() -> None:
 
 def _save_to_disk() -> None:
     data = {sid: asdict(sess) for sid, sess in _sessions.items()}
-    _SESSIONS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+    try:
+        _SESSIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _SESSIONS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+    except Exception:
+        # best-effort: на serverless FS запись может быть недоступна
+        return
 
 
 def init_session_store() -> None:
