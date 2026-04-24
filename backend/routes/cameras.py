@@ -91,7 +91,10 @@ def _fetch_http_preview(url: str) -> bytes | None:
 
 
 def _read_frame_opencv(rtsp_url: str, transport: str = "tcp") -> bytes | None:
-    import cv2
+    try:
+        import cv2  # type: ignore
+    except Exception:
+        return None
 
     prev = os.environ.get("OPENCV_FFMPEG_CAPTURE_OPTIONS")
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = f"rtsp_transport;{transport}"
@@ -210,7 +213,14 @@ async def _generate_mjpeg(rtsp_url: str):
     target_interval = 1.0 / MAX_STREAM_FPS
 
     def producer():
-        import cv2
+        try:
+            import cv2  # type: ignore
+        except Exception:
+            try:
+                loop.call_soon_threadsafe(queue.put_nowait, None)
+            except RuntimeError:
+                pass
+            return
 
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
