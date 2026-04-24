@@ -16,6 +16,23 @@ COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax")
 BACKEND_DIR = Path(__file__).resolve().parent
 # Пользователи и сессии (JSON): по умолчанию рядом с кодом; в Docker задайте TURNPIKE_DATA_DIR=/data и смонтируйте том
 _data_dir_env = os.environ.get("TURNPIKE_DATA_DIR")
-DATA_DIR = Path(_data_dir_env).resolve() if _data_dir_env else BACKEND_DIR
+
+# Vercel (serverless) имеет read-only файловую систему проекта.
+# Для JSON-хранилищ используем /tmp (временный, но writable).
+_is_vercel = os.environ.get("VERCEL") == "1" or bool(os.environ.get("VERCEL_ENV"))
+if _data_dir_env:
+    DATA_DIR = Path(_data_dir_env).resolve()
+elif _is_vercel:
+    DATA_DIR = Path("/tmp/turnpike_data")
+else:
+    DATA_DIR = BACKEND_DIR
+
+# best-effort: гарантируем существование каталога
+try:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    # если каталог создать нельзя — пусть приложение решает на уровне store
+    pass
+
 TEMPLATES_DIR = str(BACKEND_DIR / "templates")
 STATIC_DIR = str(BACKEND_DIR / "static")
