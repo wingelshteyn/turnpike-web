@@ -3,8 +3,18 @@
 
 {% block content %}
 <div class="container events-page">
+  {# vars for pagination partial #}
+  {% set date1 = filter_date1 %}
+  {% set date2 = filter_date2 %}
+  {% set sample = filter_sample %}
   <h1>События</h1>
-  <p class="events-intro">Журнал действий в приложении (демо-данные).</p>
+  <p class="events-intro">Журнал событий проездов и действий системы.</p>
+
+  {% if error_msg %}
+  <div class="alert alert-error" style="margin-bottom: 20px; padding: 12px; background: #fee; color: #c00; border-radius: 4px;">
+    {{ error_msg }}
+  </div>
+  {% endif %}
 
   <div class="events-bar">
     <div class="events-bar-left">
@@ -12,7 +22,7 @@
       <input type="search" id="eventsSearch" name="events_log_q" class="events-search-input" placeholder="Поиск по тексту…" autocomplete="off" autocorrect="off" spellcheck="false" readonly>
       <span class="events-meta" id="eventsCountLabel"></span>
     </div>
-    <button type="button" class="btn btn-outline btn-sm" id="eventsFiltersBtn">Фильтры и экспорт</button>
+    <button type="button" class="btn btn-outline btn-sm" id="eventsFiltersBtn">Фильтры</button>
   </div>
 
   <div class="events-legend" role="region" aria-label="Обозначения цветов">
@@ -30,8 +40,8 @@
     </div>
   </div>
 
-  <div class="events-table-wrap">
-    <table class="events-table">
+  <div style="overflow-x: auto">
+    <table class="data-table">
       <thead>
         <tr>
           <th class="events-col-time">Время</th>
@@ -39,6 +49,7 @@
           <th class="events-col-src">Источник</th>
           <th class="events-col-sev">Важность</th>
           <th class="events-col-st">Статус</th>
+          <th class="events-col-photo" style="width: 80px;">Фото</th>
         </tr>
       </thead>
       <tbody id="eventsTableBody">
@@ -61,50 +72,66 @@
           <td class="events-col-badge">
             <span class="events-badge events-badge--st-{{ row.st_mod }}">{{ row.status }}</span>
           </td>
+          <td class="events-col-photo">
+            {% if row.photo_url %}
+            <a href="{{ row.photo_url }}" target="_blank" rel="noreferrer" title="Открыть фото">
+              <img
+                src="{{ row.photo_url }}"
+                alt="Фото проезда"
+                style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;"
+                onerror="this.style.display='none'; this.closest('a').textContent='Фото недоступно';"
+              >
+            </a>
+            {% else %}
+            <span style="color:#999;">—</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
         {% else %}
-        {% include "partials/events_demo_fallback.html" %}
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+            {% if error_msg %}
+            Не удалось загрузить события.
+            {% else %}
+            Событий за выбранный период не найдено.
+            {% endif %}
+          </td>
+        </tr>
         {% endif %}
       </tbody>
     </table>
   </div>
+
+  {% include "_pagination_events.html" with context %}
 </div>
 
 <div class="search-overlay" id="eventsFiltersOverlay" aria-hidden="true">
   <div class="search-modal events-filters-modal" role="dialog" aria-modal="true" aria-labelledby="eventsFiltersTitle">
     <button type="button" class="search-modal-close" id="eventsFiltersClose" aria-label="Закрыть">×</button>
     <div class="search-modal-wrapper">
-      <h2 id="eventsFiltersTitle">Фильтры и экспорт</h2>
-      <p class="events-filters-hint">Расширенная фильтрация и выгрузка CSV появятся при подключении журнала к серверу.</p>
-      <label for="filterSource">Источник</label>
-      <select id="filterSource" class="events-modal-field">
-        <option value="">Все</option>
-        <option>Веб-приложение</option>
-        <option>API Аксиома24</option>
-        <option>Камеры</option>
-        <option>Авторизация</option>
-        <option>Импорт CSV</option>
-      </select>
-      <label for="filterStatus">Статус</label>
-      <select id="filterStatus" class="events-modal-field">
-        <option value="">Все</option>
-        <option>Новое</option>
-        <option>Обработано</option>
-        <option>Закрыто</option>
-      </select>
-      <label for="filterFrom">Период с</label>
-      <input type="date" id="filterFrom" class="events-modal-field">
-      <label for="filterTo">по</label>
-      <input type="date" id="filterTo" class="events-modal-field">
-      <div class="search-modal-actions">
-        <button type="button" class="btn-search" id="eventsFiltersApply">Готово</button>
-      </div>
+      <h2 id="eventsFiltersTitle">Фильтры</h2>
+      
+      <form action="/events" method="GET" id="eventsFilterForm">
+        <input type="hidden" name="page" value="1">
+        <label for="filterFrom">Период с</label>
+        <input type="text" id="filterFrom" name="date1" class="events-modal-field tp-date-input" value="{{ filter_date1 }}" placeholder="YYYY-MM-DD" autocomplete="off" inputmode="numeric">
+        
+        <label for="filterTo">по</label>
+        <input type="text" id="filterTo" name="date2" class="events-modal-field tp-date-input" value="{{ filter_date2 }}" placeholder="YYYY-MM-DD" autocomplete="off" inputmode="numeric">
+        
+        <label for="filterSample">Поиск (телефон, номер)</label>
+        <input type="text" id="filterSample" name="sample" class="events-modal-field" value="{{ filter_sample }}" placeholder="Например: 9785288607">
+        
+        <div class="search-modal-actions">
+          <button type="submit" class="btn-search" id="eventsFiltersApply">Применить</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', path='js/events-page.js') }}?v=8"></script>
+<script src="{{ url_for('static', path='js/events-page.js') }}?v=9"></script>
 {% endblock %}

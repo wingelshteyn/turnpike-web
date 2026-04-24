@@ -586,11 +586,79 @@ a:hover { text-decoration: underline; }
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
-    overflow: visible;
+    overflow: hidden;
     animation: fadeIn 0.4s ease-out;
+}
+
+/* ===== Glassmorphism (по гайду) ===== */
+.glassPanel {
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.02) 48%,
+            rgba(0, 0, 0, 0.06) 100%
+        ),
+        rgba(6, 8, 12, 0.22);
+    box-shadow:
+        0 26px 74px rgba(0, 0, 0, 0.58),
+        0 0 42px rgba(230, 235, 245, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(18px) saturate(1.08);
+    -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+/* Применяем стекло к окнам/таблицам/попапам без правок HTML */
+.data-table,
+.events-table-wrap,
+.search-modal,
+.menu-content,
+.tp-datepicker-popover,
+.analytics-kpi-card,
+.analytics-chart-card,
+.cam-toolbar,
+.cam-cell,
+.cam-loading,
+.cam-error-overlay,
+.cam-single-controls-inner,
+.cameras-page .barrier-log-window,
+.cameras-page .camera-console-window,
+.cameras-page .barrier-log-header,
+.cameras-page .camera-console-header,
+.pagination-arrow,
+.pagination-num {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.02) 48%,
+            rgba(0, 0, 0, 0.06) 100%
+        ),
+        rgba(6, 8, 12, 0.22);
+    box-shadow:
+        0 26px 74px rgba(0, 0, 0, 0.58),
+        0 0 42px rgba(230, 235, 245, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(18px) saturate(1.08);
+    -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+/* Камерные «окна-консоли» ранее форсили bg через !important — переопределяем стеклом */
+.cameras-page .barrier-log-window,
+.cameras-page .camera-console-window {
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.02) 48%,
+            rgba(0, 0, 0, 0.06) 100%
+        ),
+        rgba(6, 8, 12, 0.22) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 .data-table th,
@@ -600,18 +668,18 @@ a:hover { text-decoration: underline; }
 }
 
 .data-table th {
-    background: var(--bg-light);
+    background: rgba(255, 255, 255, 0.03);
     font-weight: 600;
     color: var(--text-secondary);
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
     white-space: nowrap;
 }
 
 .data-table td {
-    border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
     font-size: 0.95rem;
 }
@@ -621,7 +689,7 @@ a:hover { text-decoration: underline; }
 }
 
 .data-table tbody tr:hover {
-    background: rgba(51, 65, 85, 0.4);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .data-table tbody tr:last-child td {
@@ -1703,55 +1771,9 @@ textarea {
     border-radius: 3px;
 }
 
-.events-table-wrap {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    overflow-x: auto;
-}
-
-.events-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
-}
-
-.events-table thead tr {
-    background: var(--bg-medium);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.events-table th {
-    padding: 10px 14px;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-    text-align: left;
-    font-weight: 600;
-}
-
-.events-table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: top;
-    color: var(--text-primary);
-}
-
-.events-table tbody tr {
-    transition: background var(--transition-fast);
-}
-
-.events-table tbody tr:hover {
-    background: rgba(20, 184, 166, 0.05);
-}
-
-.events-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* Фильтр на странице «События» (не используем tr[hidden] — в таблицах он даёт глюки в части браузеров) */
-.events-table tbody tr.events-tr--filtered {
+/* Таблица «События» теперь использует общий стиль `.data-table` как справочники.
+   Оставляем только логику фильтрации строк через класс. */
+.data-table tbody tr.events-tr--filtered {
     display: none;
 }
 
@@ -1938,4 +1960,99 @@ textarea {
     margin-bottom: 4px;
     font-size: 0.85rem;
     color: var(--text-secondary);
+}
+
+/* ===== Datepicker (всплывающий календарь для фильтров «События») ===== */
+.tp-datepicker-popover {
+    position: fixed;
+    z-index: 9999;
+    width: 292px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    padding: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.tp-datepicker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 2px 10px;
+}
+
+.tp-datepicker-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+}
+
+.tp-datepicker-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-dark);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+    user-select: none;
+}
+
+.tp-datepicker-nav:hover {
+    background: rgba(20, 184, 166, 0.10);
+    border-color: rgba(20, 184, 166, 0.35);
+    transform: translateY(-1px);
+}
+
+.tp-datepicker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.tp-datepicker-dow {
+    text-align: center;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 6px 0;
+}
+
+.tp-datepicker-day {
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.tp-datepicker-day:hover {
+    background: rgba(20, 184, 166, 0.10);
+    border-color: rgba(20, 184, 166, 0.25);
+}
+
+.tp-datepicker-day.is-out {
+    opacity: 0.35;
+}
+
+.tp-datepicker-day.is-today {
+    border-color: rgba(245, 158, 11, 0.55);
+}
+
+.tp-datepicker-day.is-selected {
+    background: rgba(20, 184, 166, 0.18);
+    border-color: rgba(20, 184, 166, 0.55);
+    color: #5eead4;
+    font-weight: 700;
 }
