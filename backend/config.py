@@ -12,6 +12,9 @@ TOKEN_CACHE_TTL_SECONDS = int(os.environ.get("TOKEN_CACHE_TTL_SECONDS", "600"))
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() in ("1", "true", "yes", "on")
 COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax")
 
+# Секрет для подписи cookie-сессий (нужен для Vercel SessionMiddleware).
+SESSION_SECRET = os.environ.get("SESSION_SECRET", "dev-unsafe-secret-change-me")
+
 # Абсолютный путь к шаблонам, вычисляется от расположения этого файла
 BACKEND_DIR = Path(__file__).resolve().parent
 # Пользователи и сессии (JSON): по умолчанию рядом с кодом; в Docker задайте TURNPIKE_DATA_DIR=/data и смонтируйте том

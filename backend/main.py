@@ -3,13 +3,15 @@
 import logging
 from pathlib import Path
 
+import os
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse, Response
 from starlette.status import HTTP_403_FORBIDDEN
 
-from .config import STATIC_DIR
+from .config import STATIC_DIR, SESSION_SECRET
 from .url_prefix import normalize_prefix, redirect as prefixed_redirect
 from .session_store import get_session, init_session_store
 from .routes import (
@@ -37,6 +39,16 @@ app = FastAPI()
 # --- Инициализация пользователей (admin / admin) ---
 init_users()
 init_session_store()
+
+# --- Cookie-based sessions for Vercel (stateless) ---
+_is_vercel = bool(os.environ.get("VERCEL_ENV")) or (os.environ.get("VERCEL") == "1")
+if _is_vercel:
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=SESSION_SECRET,
+        same_site="lax",
+        https_only=True,
+    )
 
 # --- Middleware: учёт префикса reverse-proxy (nginx) ---
 @app.middleware("http")
@@ -68,6 +80,16 @@ async def auth_middleware(request: Request, call_next):
         path in ("/", "/favicon.ico", "/health")
         or path.startswith("/static/")
     ):
+        return await call_next(request)
+
+    if _is_vercel:
+        # На Vercel используем cookie-based сессии (request.session)
+        sess = getattr(request, "session", None) or {}
+        if not sess.get("username"):
+            return prefixed_redirect(request, "/", status_code=302)
+        request.state.username = sess.get("username")
+        request.state.role = sess.get("role", "USER")
+        request.state.csrf_token = sess.get("csrf_token", "")
         return await call_next(request)
 
     session_id = request.cookies.get("session")

@@ -33,8 +33,12 @@ def _set_session_cookie(response, session_id: str):
 @router.get("/", response_class=HTMLResponse)
 async def auth_form(request: Request):
     """Страница авторизации."""
+    # Vercel: cookie-based session via SessionMiddleware
+    if "session" in request.scope and request.session.get("username"):
+        return prefixed_redirect(request, "/analytics", status_code=status.HTTP_302_FOUND)
+
     session_id = request.cookies.get("session")
-    if get_session(session_id):
+    if session_id and get_session(session_id):
         return prefixed_redirect(request, "/analytics", status_code=status.HTTP_302_FOUND)
     return templates.TemplateResponse(request, "auth.html", {"error": None})
 
@@ -51,8 +55,15 @@ async def auth_login(
     local_user = local_authenticate(username, password)
     if local_user:
         response = prefixed_redirect(request, "/analytics", status_code=status.HTTP_303_SEE_OTHER)
-        sess = create_session(username=local_user["username"], role=local_user["role"])
-        _set_session_cookie(response, sess.session_id)
+        if "session" in request.scope:
+            request.session.update({
+                "username": local_user["username"],
+                "role": local_user["role"],
+                "csrf_token": "csrf",  # минимально, CSRF на Vercel не используем для GET
+            })
+        else:
+            sess = create_session(username=local_user["username"], role=local_user["role"])
+            _set_session_cookie(response, sess.session_id)
         logger.info("Локальный пользователь %s авторизован (роль: %s)", username, local_user["role"])
         return response
 
@@ -63,8 +74,15 @@ async def auth_login(
 
         response = prefixed_redirect(request, "/analytics", status_code=status.HTTP_303_SEE_OTHER)
         # Создаём серверную сессию (username/role тут минимальные)
-        sess = create_session(username=username, role="USER")
-        _set_session_cookie(response, sess.session_id)
+        if "session" in request.scope:
+            request.session.update({
+                "username": username,
+                "role": "USER",
+                "csrf_token": "csrf",
+            })
+        else:
+            sess = create_session(username=username, role="USER")
+            _set_session_cookie(response, sess.session_id)
         logger.info("Пользователь %s авторизован через внешний API", username)
         return response
 
@@ -81,6 +99,8 @@ async def auth_login(
 async def logout(request: Request):
     """Выход из системы — удаление куки и редирект на страницу авторизации."""
     response = prefixed_redirect(request, "/", status_code=status.HTTP_302_FOUND)
+    if "session" in request.scope:
+        request.session.clear()
     delete_session(request.cookies.get("session"))
     response.delete_cookie("session")
     logger.info("Пользователь вышел из системы")
