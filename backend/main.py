@@ -3,13 +3,14 @@
 import logging
 from pathlib import Path
 
-import os
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse, Response
 from starlette.status import HTTP_403_FORBIDDEN
+
+import os
 
 from .config import STATIC_DIR, SESSION_SECRET
 from .url_prefix import normalize_prefix, redirect as prefixed_redirect
@@ -40,15 +41,8 @@ app = FastAPI()
 init_users()
 init_session_store()
 
-# --- Cookie-based sessions for Vercel (stateless) ---
+# --- Env flags ---
 _is_vercel = bool(os.environ.get("VERCEL_ENV")) or (os.environ.get("VERCEL") == "1")
-if _is_vercel:
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=SESSION_SECRET,
-        same_site="lax",
-        https_only=True,
-    )
 
 # --- Middleware: учёт префикса reverse-proxy (nginx) ---
 @app.middleware("http")
@@ -82,9 +76,9 @@ async def auth_middleware(request: Request, call_next):
     ):
         return await call_next(request)
 
-    if _is_vercel:
+    if _is_vercel and "session" in request.scope:
         # На Vercel используем cookie-based сессии (request.session)
-        sess = getattr(request, "session", None) or {}
+        sess = request.session or {}
         if not sess.get("username"):
             return prefixed_redirect(request, "/", status_code=302)
         request.state.username = sess.get("username")
@@ -118,6 +112,18 @@ async def auth_middleware(request: Request, call_next):
     request.state.role = sess.role
     request.state.csrf_token = sess.csrf_token
     return await call_next(request)
+
+
+# --- Cookie-based sessions for Vercel (stateless) ---
+# Важно: добавляем SessionMiddleware ПОСЛЕ декларативных @app.middleware,
+# чтобы она оборачивала их и успевала проставить `scope['session']`.
+if _is_vercel:
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=SESSION_SECRET,
+        same_site="lax",
+        https_only=True,
+    )
 
 
 # --- Маршруты ---
