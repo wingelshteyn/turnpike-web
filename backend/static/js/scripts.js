@@ -6,10 +6,55 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ===== Action Menus (three-dot dropdown) =====
     // Делегирование событий — надёжнее, чем привязка к кнопкам при загрузке.
+    var openState = null; // { menu, btn, menuContent }
+
+    function detachMenuContent(menu, menuContent) {
+        if (!menuContent) return;
+        if (menuContent.__tpDetached) return;
+        // placeholder чтобы вернуть обратно в DOM
+        var ph = document.createElement('span');
+        ph.style.display = 'none';
+        ph.__tpFor = menuContent;
+        menuContent.__tpPlaceholder = ph;
+        menuContent.__tpParent = menuContent.parentNode;
+        menuContent.__tpNext = menuContent.nextSibling;
+        if (menuContent.parentNode) menuContent.parentNode.insertBefore(ph, menuContent);
+        document.body.appendChild(menuContent);
+        menuContent.__tpDetached = true;
+        // фиксируем позиционирование относительно viewport
+        menuContent.style.position = 'fixed';
+        menuContent.style.zIndex = '10000';
+    }
+
+    function attachMenuContent(menuContent) {
+        if (!menuContent || !menuContent.__tpDetached) return;
+        try {
+            var ph = menuContent.__tpPlaceholder;
+            if (ph && ph.parentNode) {
+                ph.parentNode.insertBefore(menuContent, ph);
+                ph.parentNode.removeChild(ph);
+            } else if (menuContent.__tpParent) {
+                // fallback
+                menuContent.__tpParent.appendChild(menuContent);
+            }
+        } catch (e) {
+            // ignore
+        }
+        menuContent.__tpDetached = false;
+        menuContent.__tpPlaceholder = null;
+        menuContent.__tpParent = null;
+        menuContent.__tpNext = null;
+        menuContent.style.position = '';
+    }
+
     function closeAllActionMenus(exceptMenu) {
         document.querySelectorAll('.action-menu.open').forEach(function (m) {
-            if (!exceptMenu || m !== exceptMenu) m.classList.remove('open');
+            if (exceptMenu && m === exceptMenu) return;
+            m.classList.remove('open');
+            var c = m.querySelector('.menu-content');
+            attachMenuContent(c);
         });
+        if (!exceptMenu) openState = null;
     }
 
     function positionMenu(btn, menuContent) {
@@ -30,6 +75,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function repositionOpenMenu() {
+        if (!openState) return;
+        if (!openState.menu || !openState.menu.classList.contains('open')) return;
+        if (!openState.btn || !openState.menuContent) return;
+        positionMenu(openState.btn, openState.menuContent);
+    }
+
+    window.addEventListener('scroll', repositionOpenMenu, true);
+    window.addEventListener('resize', repositionOpenMenu);
+
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest ? e.target.closest('.action-menu .btn-menu') : null;
         if (btn) {
@@ -40,7 +95,12 @@ document.addEventListener('DOMContentLoaded', function () {
             closeAllActionMenus(menu);
             if (menu) menu.classList.toggle('open');
             if (menu && menu.classList.contains('open') && menuContent) {
+                detachMenuContent(menu, menuContent);
+                openState = { menu: menu, btn: btn, menuContent: menuContent };
                 positionMenu(btn, menuContent);
+            } else if (menu && !menu.classList.contains('open') && menuContent) {
+                attachMenuContent(menuContent);
+                openState = null;
             }
             return;
         }
