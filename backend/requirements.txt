@@ -1,4 +1,5 @@
 fastapi
+aiofiles
 uvicorn[standard]
 httpx
 jinja2
