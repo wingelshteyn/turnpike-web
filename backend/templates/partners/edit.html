@@ -5,6 +5,7 @@
   <h1>Редактировать партнёра</h1>
   {% if message %}<p class="message">{{ message }}</p>{% endif %}
 
+  <div class="edit-glass-window">
   <form method="post" action="/partners/edit/{{ partner['id'] }}" style="max-width: 600px; width: 100%;">
     <label for="partner_type">Тип партнёра:</label>
     <select id="partner_type" name="partner_type" required>
@@ -18,6 +19,7 @@
 
     <button type="submit" class="btn-accent">Сохранить</button>
   </form>
+  </div>
 
   <p class="back-to-list"><a href="/partners" class="btn btn-outline">← Назад к списку</a></p>
 </div>

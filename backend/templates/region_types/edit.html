@@ -5,6 +5,7 @@
   <h1>Редактировать тип территории</h1>
   {% if message %}<p class="message">{{ message }}</p>{% endif %}
 
+  <div class="edit-glass-window">
   <form method="post" action="/region-types/edit/{{ region['id'] }}" style="max-width: 600px; width: 100%;">
     <label for="type">Краткое название (Brief):</label>
     <input id="type" name="type" value="{{ region.get('Brief', '') or '' }}" required>
@@ -14,6 +15,7 @@
 
     <button type="submit" class="btn-accent">Сохранить</button>
   </form>
+  </div>
 
   <p class="back-to-list"><a href="/region-types" class="btn btn-outline">← Назад к списку</a></p>
 </div>

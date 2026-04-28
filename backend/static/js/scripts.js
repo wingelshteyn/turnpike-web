@@ -96,6 +96,17 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('scroll', repositionOpenMenu, true);
     window.addEventListener('resize', repositionOpenMenu);
 
+    // Надёжное закрытие по клику вне меню (capture-фаза)
+    document.addEventListener('pointerdown', function (e) {
+        if (!openState || !openState.menu || !openState.menuContent) return;
+        var t = e.target;
+        if (t && t.closest) {
+            if (t.closest('.menu-content')) return;
+            if (t.closest('.action-menu .btn-menu')) return;
+        }
+        closeAllActionMenus(null);
+    }, true);
+
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest ? e.target.closest('.action-menu .btn-menu') : null;
         if (btn) {

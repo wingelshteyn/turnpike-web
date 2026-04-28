@@ -5,6 +5,7 @@
   <h1>Редактировать регион</h1>
   {% if message %}<p class="message">{{ message }}</p>{% endif %}
 
+  <div class="edit-glass-window">
   <form method="post" action="/regions/edit/{{ region['id'] }}" style="max-width: 600px; width: 100%;">
     <label for="id">ID:</label>
     <input id="id" value="{{ region['id'] }}" readonly>
@@ -31,6 +32,7 @@
 
     <button type="submit" class="btn-accent">Сохранить</button>
   </form>
+  </div>
 
   <p class="back-to-list"><a href="/regions" class="btn btn-outline">← Назад к списку</a></p>
 </div>
