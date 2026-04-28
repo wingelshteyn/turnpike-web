@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from fastapi import HTTPException
 
+from ..auth_context import AuthBundle, get_auth_context
 from ..token_manager import TokenManager
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class BaseAPI:
         self.base_url = base_url.rstrip("/")
         self.token_manager = TokenManager()
         self.client: httpx.AsyncClient | None = None
+        self._bundle: AuthBundle | None = None
 
     # ------------------------------------------------------------------
     # CRUD-операции
@@ -81,12 +83,20 @@ class BaseAPI:
             # Один ретрай при 401/403: обновляем токены и повторяем запрос
             if exc.response.status_code in (401, 403):
                 try:
-                    await self.token_manager.refresh_tokens()
-                    await self.client.aclose()
-                    self.client = httpx.AsyncClient(
-                        headers=self.token_manager.get_auth_headers(),
-                        timeout=10,
+                    if not self._bundle:
+                        raise exc
+                    access, refresh = await self.token_manager.refresh_with_refresh_token(
+                        self._bundle.token_refresh,
                     )
+                    self._bundle.token_access = access
+                    self._bundle.token_refresh = refresh
+                    # persist обновлённые токены в backing store
+                    ctx = get_auth_context()
+                    if ctx:
+                        await ctx.persist(self._bundle)
+
+                    await self.client.aclose()
+                    self.client = httpx.AsyncClient(headers=_headers_from_bundle(self._bundle), timeout=10)
                     response = await self.client.request(
                         method, url, params=params, json=json,
                     )
@@ -133,23 +143,22 @@ class BaseAPI:
     # ------------------------------------------------------------------
 
     async def __aenter__(self):
-        try:
-            await self.token_manager.authenticate()
-        except httpx.TimeoutException as exc:
-            raise HTTPException(
-                status_code=504,
-                detail="Сервер авторизации не отвечает. Попробуйте позже.",
-            ) from exc
-        except httpx.ConnectError as exc:
-            raise HTTPException(
-                status_code=502,
-                detail="Не удалось подключиться к серверу авторизации.",
-            ) from exc
-        self.client = httpx.AsyncClient(
-            headers=self.token_manager.get_auth_headers(),
-            timeout=10,
-        )
+        ctx = get_auth_context()
+        if not ctx:
+            raise HTTPException(status_code=401, detail="Нет авторизации")
+        self._bundle = ctx.bundle
+        self.client = httpx.AsyncClient(headers=_headers_from_bundle(self._bundle), timeout=10)
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.client.aclose()
+
+
+def _headers_from_bundle(bundle: AuthBundle) -> dict:
+    headers = {
+        "Authorization": f"Bearer {bundle.token_access}",
+        "Content-Type": "application/json",
+    }
+    if bundle.axioma_session:
+        headers["Cookie"] = f"session={bundle.axioma_session}"
+    return headers

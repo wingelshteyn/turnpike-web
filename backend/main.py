@@ -11,10 +11,13 @@ from starlette.responses import RedirectResponse, Response
 from starlette.status import HTTP_403_FORBIDDEN
 
 import os
+import time
 
 from .config import STATIC_DIR, SESSION_SECRET
+from .auth_context import AuthBundle, AuthContext, reset_auth_context, set_auth_context
 from .url_prefix import normalize_prefix, redirect as prefixed_redirect
-from .session_store import get_session, init_session_store
+from .session_store import get_session, init_session_store, update_session_auth
+from .token_manager import TokenManager
 from .routes import (
     analytics_pages_router,
     auth_router,
@@ -43,6 +46,7 @@ init_session_store()
 
 # --- Env flags ---
 _is_vercel = bool(os.environ.get("VERCEL_ENV")) or (os.environ.get("VERCEL") == "1")
+_SESSION_TTL_MS = 24 * 60 * 60 * 1000
 
 # --- Middleware: учёт префикса reverse-proxy (nginx) ---
 @app.middleware("http")
@@ -76,42 +80,105 @@ async def auth_middleware(request: Request, call_next):
     ):
         return await call_next(request)
 
-    if _is_vercel and "session" in request.scope:
-        # На Vercel используем cookie-based сессии (request.session)
-        sess = request.session or {}
-        if not sess.get("username"):
+    token_ctx = None
+    try:
+        if _is_vercel and "session" in request.scope:
+            # На Vercel используем cookie-based сессии (request.session)
+            sess = request.session or {}
+            if not sess.get("username"):
+                return prefixed_redirect(request, "/", status_code=302)
+            # TTL 24 часа
+            saved_at_ms = int(sess.get("saved_at_ms") or 0)
+            if not saved_at_ms or (int(time.time() * 1000) - saved_at_ms) > _SESSION_TTL_MS:
+                request.session.clear()
+                return prefixed_redirect(request, "/", status_code=302)
+
+            token_access = sess.get("token_access") or ""
+            token_refresh = sess.get("token_refresh") or ""
+            axioma_session = sess.get("axioma_session") or ""
+            if not (token_access and token_refresh and axioma_session):
+                request.session.clear()
+                return prefixed_redirect(request, "/", status_code=302)
+
+            request.state.username = sess.get("username")
+            request.state.role = sess.get("role", "USER")
+            request.state.csrf_token = sess.get("csrf_token", "")
+
+            async def _persist(b: AuthBundle) -> None:
+                request.session.update({
+                    "token_access": b.token_access,
+                    "token_refresh": b.token_refresh,
+                    "axioma_session": b.axioma_session,
+                    "saved_at_ms": b.saved_at_ms,
+                })
+
+            token_ctx = set_auth_context(AuthContext(
+                bundle=AuthBundle(
+                    username=str(request.state.username),
+                    role=str(request.state.role),
+                    token_access=str(token_access),
+                    token_refresh=str(token_refresh),
+                    axioma_session=str(axioma_session),
+                    saved_at_ms=int(saved_at_ms),
+                ),
+                persist=_persist,
+            ))
+            return await call_next(request)
+
+        session_id = request.cookies.get("session")
+        sess = get_session(session_id)
+        if not sess:
             return prefixed_redirect(request, "/", status_code=302)
-        request.state.username = sess.get("username")
-        request.state.role = sess.get("role", "USER")
-        request.state.csrf_token = sess.get("csrf_token", "")
-        return await call_next(request)
 
-    session_id = request.cookies.get("session")
-    sess = get_session(session_id)
-    if not sess:
-        return prefixed_redirect(request, "/", status_code=302)
+        # TTL 24 часа по saved_at_ms
+        if not sess.saved_at_ms or (int(time.time() * 1000) - int(sess.saved_at_ms)) > _SESSION_TTL_MS:
+            return prefixed_redirect(request, "/", status_code=302)
 
-    # CSRF-защита для небезопасных методов (HTML-формы)
-    if request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:
-        # /logout — тоже защищаем (кнопка в UI отправляет GET сейчас, но на будущее)
-        form_token = None
-        header_token = request.headers.get("x-csrf-token")
-        try:
-            # starlette кэширует body, так что form() безопасен
-            form = await request.form()
-            form_token = form.get("csrf_token")
-        except Exception:
+        # CSRF-защита для небезопасных методов (HTML-формы)
+        if request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:
+            # /logout — тоже защищаем (кнопка в UI отправляет GET сейчас, но на будущее)
             form_token = None
-        if not (form_token and form_token == sess.csrf_token) and not (
-            header_token and header_token == sess.csrf_token
-        ):
-            return Response(status_code=HTTP_403_FORBIDDEN, content="CSRF check failed")
+            header_token = request.headers.get("x-csrf-token")
+            try:
+                # starlette кэширует body, так что form() безопасен
+                form = await request.form()
+                form_token = form.get("csrf_token")
+            except Exception:
+                form_token = None
+            if not (form_token and form_token == sess.csrf_token) and not (
+                header_token and header_token == sess.csrf_token
+            ):
+                return Response(status_code=HTTP_403_FORBIDDEN, content="CSRF check failed")
 
-    # Сохраняем данные пользователя в state для использования в шаблонах/роутах
-    request.state.username = sess.username
-    request.state.role = sess.role
-    request.state.csrf_token = sess.csrf_token
-    return await call_next(request)
+        # Сохраняем данные пользователя в state для использования в шаблонах/роутах
+        request.state.username = sess.username
+        request.state.role = sess.role
+        request.state.csrf_token = sess.csrf_token
+
+        async def _persist(b: AuthBundle) -> None:
+            if session_id:
+                update_session_auth(
+                    session_id,
+                    token_access=b.token_access,
+                    token_refresh=b.token_refresh,
+                    axioma_session=b.axioma_session,
+                )
+
+        token_ctx = set_auth_context(AuthContext(
+            bundle=AuthBundle(
+                username=str(sess.username),
+                role=str(sess.role),
+                token_access=str(sess.token_access),
+                token_refresh=str(sess.token_refresh),
+                axioma_session=str(sess.axioma_session),
+                saved_at_ms=int(sess.saved_at_ms),
+            ),
+            persist=_persist,
+        ))
+        return await call_next(request)
+    finally:
+        if token_ctx is not None:
+            reset_auth_context(token_ctx)
 
 
 # --- Cookie-based sessions for Vercel (stateless) ---

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import httpx
 
@@ -71,6 +73,38 @@ class TokenManager:
             )
         return self.token_access
 
+    @staticmethod
+    def token_expire_ms(token: str) -> int:
+        """Пытается достать expires/exp из JWT без верификации подписи."""
+        try:
+            parts = token.split(".")
+            if len(parts) < 2:
+                return 0
+            payload_b64 = parts[1]
+            payload_b64 += "=" * (-len(payload_b64) % 4)
+            payload_json = base64.urlsafe_b64decode(payload_b64.encode("utf-8")).decode("utf-8")
+            import json
+
+            payload = json.loads(payload_json)
+            v = payload.get("expires") or payload.get("exp")
+            if not v:
+                return 0
+            # exp чаще всего seconds since epoch
+            if isinstance(v, (int, float)):
+                return int(v * 1000)
+            # или строка-датавремя (ISO)
+            if isinstance(v, str):
+                try:
+                    dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    return int(dt.timestamp() * 1000)
+                except Exception:
+                    return 0
+            return 0
+        except Exception:
+            return 0
+
     def get_auth_headers(self) -> dict:
         """Заголовки для авторизованных запросов."""
         headers = {
@@ -112,15 +146,50 @@ class TokenManager:
                     obtained_at=_now(),
                 )
 
+    async def login_with_password(self, *, username: str, password: str) -> _TokenBundle:
+        """Axioma flow: authorize (login/password) -> login (session cookie)."""
+        self.username = username
+        self.password = password
+        async with httpx.AsyncClient(timeout=15) as client:
+            await self._obtain_tokens(client)
+            await self._login(client)
+        if not (self.token_access and self.token_refresh and self.session):
+            raise RuntimeError("Токены/сессия не получены")
+        return _TokenBundle(
+            access=self.token_access,
+            refresh=self.token_refresh,
+            session=self.session,
+            obtained_at=_now(),
+        )
+
+    async def refresh_with_refresh_token(self, refresh_token: str) -> tuple[str, str]:
+        """Обновить access/refresh по refresh_token (как в JS-примере)."""
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(
+                f"{HOST_AUTH}/refresh",
+                headers={"Authorization": f"Bearer {refresh_token}"},
+            )
+            response.raise_for_status()
+            data = response.json()
+            if not data.get("success"):
+                raise RuntimeError(f"Ошибка обновления токенов: {data.get('error')}")
+            tokens = data.get("result", {})
+            access = tokens.get("token_access")
+            refresh = tokens.get("token_refresh")
+            if not access or not refresh:
+                raise RuntimeError("Токены не получены при refresh")
+            return access, refresh
+
     # ------------------------------------------------------------------
     # Внутренние методы
     # ------------------------------------------------------------------
 
     async def _obtain_tokens(self, client: httpx.AsyncClient) -> None:
+        # В JS-примере используется application/x-www-form-urlencoded
         response = await client.post(
             f"{HOST_AUTH}/authorize",
-            json={"login": self.username, "password": self.password},
-            headers={"Content-Type": "application/json"},
+            data={"login": self.username, "password": self.password},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         if response.status_code != 200:
             raise RuntimeError(f"Не удалось авторизоваться: {response.text}")

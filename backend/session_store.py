@@ -22,6 +22,10 @@ class SessionData:
     username: str
     role: str
     csrf_token: str
+    token_access: str
+    token_refresh: str
+    axioma_session: str
+    saved_at_ms: int
     created_at: float
     expires_at: float
 
@@ -71,7 +75,16 @@ def init_session_store() -> None:
         cleanup_expired(save=False)
 
 
-def create_session(username: str, role: str, ttl_seconds: int = 3600 * 24) -> SessionData:
+def create_session(
+    *,
+    username: str,
+    role: str,
+    token_access: str,
+    token_refresh: str,
+    axioma_session: str,
+    saved_at_ms: int,
+    ttl_seconds: int = 3600 * 24,
+) -> SessionData:
     now = _now()
     sid = secrets.token_urlsafe(32)
     csrf = secrets.token_urlsafe(32)
@@ -80,6 +93,10 @@ def create_session(username: str, role: str, ttl_seconds: int = 3600 * 24) -> Se
         username=username,
         role=role,
         csrf_token=csrf,
+        token_access=token_access,
+        token_refresh=token_refresh,
+        axioma_session=axioma_session,
+        saved_at_ms=saved_at_ms,
         created_at=now,
         expires_at=now + ttl_seconds,
     )
@@ -124,4 +141,24 @@ def cleanup_expired(*, save: bool = True) -> int:
         if removed and save:
             _save_to_disk()
     return removed
+
+
+def update_session_auth(
+    session_id: str,
+    *,
+    token_access: str,
+    token_refresh: str,
+    axioma_session: str | None = None,
+) -> None:
+    """Обновить токены в существующей серверной сессии."""
+    with _lock:
+        sess = _sessions.get(session_id)
+        if not sess:
+            return
+        sess.token_access = token_access
+        sess.token_refresh = token_refresh
+        if axioma_session is not None:
+            sess.axioma_session = axioma_session
+        _sessions[session_id] = sess
+        _save_to_disk()
 

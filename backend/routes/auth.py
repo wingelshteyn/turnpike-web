@@ -1,6 +1,7 @@
 """Маршруты авторизации."""
 
 import logging
+import time
 
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -8,8 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from ..dependencies import templates
 from ..url_prefix import redirect as prefixed_redirect
 from ..token_manager import TokenManager
-from ..user_store import authenticate as local_authenticate
-from ..session_store import create_session, delete_session, get_session
+from ..session_store import create_session, delete_session, get_session, update_session_auth
 from ..config import COOKIE_SAMESITE, COOKIE_SECURE
 
 logger = logging.getLogger(__name__)
@@ -49,39 +49,32 @@ async def auth_login(
     username: str = Form(...),
     password: str = Form(...),
 ):
-    """Обработка формы входа: сначала локальная БД, потом внешний API."""
-
-    # --- 1. Проверяем локальное хранилище пользователей ---
-    local_user = local_authenticate(username, password)
-    if local_user:
-        response = prefixed_redirect(request, "/analytics", status_code=status.HTTP_303_SEE_OTHER)
-        if "session" in request.scope:
-            request.session.update({
-                "username": local_user["username"],
-                "role": local_user["role"],
-                "csrf_token": "csrf",  # минимально, CSRF на Vercel не используем для GET
-            })
-        else:
-            sess = create_session(username=local_user["username"], role=local_user["role"])
-            _set_session_cookie(response, sess.session_id)
-        logger.info("Локальный пользователь %s авторизован (роль: %s)", username, local_user["role"])
-        return response
-
-    # --- 2. Внешний API (axioma24) ---
+    """Вход через внешний API (axioma24) по примеру JS."""
     try:
-        token_manager = TokenManager(username=username, password=password)
-        await token_manager.authenticate()
+        tm = TokenManager()
+        bundle = await tm.login_with_password(username=username, password=password)
+        saved_at_ms = int(time.time() * 1000)
 
         response = prefixed_redirect(request, "/analytics", status_code=status.HTTP_303_SEE_OTHER)
-        # Создаём серверную сессию (username/role тут минимальные)
         if "session" in request.scope:
             request.session.update({
                 "username": username,
                 "role": "USER",
                 "csrf_token": "csrf",
+                "token_access": bundle.access,
+                "token_refresh": bundle.refresh,
+                "axioma_session": bundle.session,
+                "saved_at_ms": saved_at_ms,
             })
         else:
-            sess = create_session(username=username, role="USER")
+            sess = create_session(
+                username=username,
+                role="USER",
+                token_access=bundle.access,
+                token_refresh=bundle.refresh,
+                axioma_session=bundle.session,
+                saved_at_ms=saved_at_ms,
+            )
             _set_session_cookie(response, sess.session_id)
         logger.info("Пользователь %s авторизован через внешний API", username)
         return response
