@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
         menuContent.__tpParent = null;
         menuContent.__tpNext = null;
         menuContent.style.position = '';
+        menuContent.style.display = '';
     }
 
     function closeAllActionMenus(exceptMenu) {
@@ -52,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (exceptMenu && m === exceptMenu) return;
             m.classList.remove('open');
             var c = m.querySelector('.menu-content');
+            if (c) c.style.display = 'none';
             attachMenuContent(c);
         });
         if (!exceptMenu) openState = null;
@@ -96,9 +98,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (menu) menu.classList.toggle('open');
             if (menu && menu.classList.contains('open') && menuContent) {
                 detachMenuContent(menu, menuContent);
+                menuContent.style.display = 'block';
                 openState = { menu: menu, btn: btn, menuContent: menuContent };
                 positionMenu(btn, menuContent);
             } else if (menu && !menu.classList.contains('open') && menuContent) {
+                menuContent.style.display = 'none';
                 attachMenuContent(menuContent);
                 openState = null;
             }
