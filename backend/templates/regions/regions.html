@@ -5,9 +5,7 @@
   <h1>Регионы</h1>
   <div class="actions-block">
     <div class="actions">
-      {% set add_url = "/regions/add" %}
-      {% set add_label = "Добавить регион" %}
-      {% include "_add_menu.html" %}
+      <a href="/regions/add" class="btn btn-outline">Добавить</a>
       <a href="/regions/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/regions" class="search-row">

@@ -6,9 +6,7 @@
 
   <div class="actions-block">
     <div class="actions">
-      {% set add_url = "/contacts/add" %}
-      {% set add_label = "Добавить контакт" %}
-      {% include "_add_menu.html" %}
+      <a href="/contacts/add" class="btn btn-outline">Добавить</a>
       <a href="/contacts/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/contacts" class="search-row">

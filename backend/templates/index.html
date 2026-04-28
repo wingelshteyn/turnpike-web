@@ -6,9 +6,7 @@
 
   <div class="actions-block">
     <div class="actions">
-      {% set add_url = "/partner-types/add" %}
-      {% set add_label = "Добавить тип партнёра" %}
-      {% include "_add_menu.html" %}
+      <a href="/partner-types/add" class="btn btn-outline">Добавить</a>
       <a href="/partner-types/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/partner-types/" class="search-row">

@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (menuContent.parentNode) menuContent.parentNode.insertBefore(ph, menuContent);
         document.body.appendChild(menuContent);
         menuContent.__tpDetached = true;
+        // запоминаем на меню, чтобы уметь закрывать даже когда content в body
+        if (menu) menu.__tpDetachedContent = menuContent;
         // фиксируем позиционирование относительно viewport
         menuContent.style.position = 'fixed';
         menuContent.style.zIndex = '10000';
@@ -48,14 +50,31 @@ document.addEventListener('DOMContentLoaded', function () {
         menuContent.style.display = '';
     }
 
+    function getMenuContentFor(menu) {
+        if (!menu) return null;
+        return menu.querySelector('.menu-content') || menu.__tpDetachedContent || null;
+    }
+
     function closeAllActionMenus(exceptMenu) {
         document.querySelectorAll('.action-menu.open').forEach(function (m) {
             if (exceptMenu && m === exceptMenu) return;
             m.classList.remove('open');
-            var c = m.querySelector('.menu-content');
+            var c = getMenuContentFor(m);
             if (c) c.style.display = 'none';
             attachMenuContent(c);
+            if (m.__tpDetachedContent === c) m.__tpDetachedContent = null;
         });
+        // если было открыто меню и оно уже не в DOM-дереве .action-menu — закрываем по openState
+        if (openState && openState.menu && (!exceptMenu || openState.menu !== exceptMenu)) {
+            try {
+                if (openState.menu) openState.menu.classList.remove('open');
+                if (openState.menuContent) {
+                    openState.menuContent.style.display = 'none';
+                    attachMenuContent(openState.menuContent);
+                }
+                if (openState.menu) openState.menu.__tpDetachedContent = null;
+            } catch (e) {}
+        }
         if (!exceptMenu) openState = null;
     }
 
@@ -113,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.stopPropagation();
             e.preventDefault();
             var menu = btn.closest('.action-menu');
-            var menuContent = menu ? menu.querySelector('.menu-content') : null;
+            var menuContent = menu ? getMenuContentFor(menu) : null;
             closeAllActionMenus(menu);
             if (menu) menu.classList.toggle('open');
             if (menu && menu.classList.contains('open') && menuContent) {
@@ -124,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (menu && !menu.classList.contains('open') && menuContent) {
                 menuContent.style.display = 'none';
                 attachMenuContent(menuContent);
+                if (menu.__tpDetachedContent === menuContent) menu.__tpDetachedContent = null;
                 openState = null;
             }
             return;

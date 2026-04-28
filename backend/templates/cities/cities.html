@@ -5,9 +5,7 @@
   <h1>Города</h1>
   <div class="actions-block">
     <div class="actions">
-      {% set add_url = "/cities/add" %}
-      {% set add_label = "Добавить город" %}
-      {% include "_add_menu.html" %}
+      <a href="/cities/add" class="btn btn-outline">Добавить</a>
       <a href="/cities/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/cities" class="search-row">

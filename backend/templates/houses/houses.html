@@ -6,9 +6,7 @@
 
   <div class="actions-block">
     <div class="actions">
-      {% set add_url = "/houses/add" %}
-      {% set add_label = "Добавить дом" %}
-      {% include "_add_menu.html" %}
+      <a href="/houses/add" class="btn btn-outline">Добавить</a>
       <a href="/houses/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/houses" class="search-row">
