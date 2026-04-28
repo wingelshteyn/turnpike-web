@@ -1200,6 +1200,12 @@ textarea {
     margin-right: auto;
 }
 
+/* Окна камеры/журнала делаем шире (≈ 1.5× от 1200px) */
+.cameras-page .camera-console-window,
+.cameras-page .barrier-log-window {
+    max-width: 1800px;
+}
+
 /* Toolbar */
 .cam-toolbar {
     display: flex;

@@ -36,9 +36,15 @@
               <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             </button>
             <div class="menu-content" onclick="event.stopPropagation()">
-              <a href="/partners/edit/{{ p['id'] }}" class="menu-item btn-accent-small">Редактировать партнёра</a>
+              <a href="/partners/edit/{{ p['id'] }}" class="menu-item">
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75l11-11.04-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                Редактировать
+              </a>
               <form method="post" action="/partners/delete/{{ p['id'] }}" onsubmit="return confirm('Удалить партнёра?')" class="inline">
-                <button class="menu-item btn-delete-small" type="submit">Удалить</button>
+                <button class="menu-item btn-delete-small" type="submit">
+                  <svg viewBox="0 0 24 24"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-4.5l-1-1z"/></svg>
+                  Удалить
+                </button>
               </form>
             </div>
           </div>
