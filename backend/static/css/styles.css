@@ -655,6 +655,83 @@ a:hover { text-decoration: underline; }
     -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
+/* ===== Glassmorphism for buttons & search inputs ===== */
+button,
+.btn,
+.btn-outline,
+.btn-accent,
+.btn-menu,
+.toggle-details-btn,
+.cam-layout-btn,
+.cam-cell-btn,
+.cameras-page .barrier-log-clear-btn,
+.auth-form button,
+.events-page .events-search-input,
+.search-input-wrap input,
+input[type="search"] {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 255, 255, 0.03) 48%,
+            rgba(0, 0, 0, 0.06) 100%
+        ),
+        rgba(6, 8, 12, 0.20);
+    box-shadow:
+        0 18px 48px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(14px) saturate(1.06);
+    -webkit-backdrop-filter: blur(14px) saturate(1.06);
+}
+
+button:hover,
+.btn:hover,
+.btn-outline:hover,
+.btn-accent:hover,
+.btn-menu:hover,
+.toggle-details-btn:hover,
+.cam-layout-btn:hover,
+.cam-cell-btn:hover,
+.cameras-page .barrier-log-clear-btn:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.10) 0%,
+            rgba(255, 255, 255, 0.04) 48%,
+            rgba(0, 0, 0, 0.08) 100%
+        ),
+        rgba(6, 8, 12, 0.22);
+}
+
+button:active,
+.btn:active,
+.btn-outline:active,
+.btn-accent:active,
+.btn-menu:active,
+.toggle-details-btn:active,
+.cam-layout-btn:active,
+.cam-cell-btn:active {
+    transform: translateY(1px);
+}
+
+/* Чёткий фокус для клавиатуры */
+button:focus-visible,
+.btn:focus-visible,
+.btn-outline:focus-visible,
+.btn-accent:focus-visible,
+.btn-menu:focus-visible,
+.toggle-details-btn:focus-visible,
+.cam-layout-btn:focus-visible,
+.cam-cell-btn:focus-visible,
+.events-page .events-search-input:focus-visible,
+.search-input-wrap input:focus-visible,
+input[type="search"]:focus-visible {
+    outline: 2px solid rgba(20, 184, 166, 0.55);
+    outline-offset: 2px;
+}
+
 /* Камерные «окна-консоли» ранее форсили bg через !important — переопределяем стеклом */
 .cameras-page .barrier-log-window,
 .cameras-page .camera-console-window {
@@ -1446,6 +1523,13 @@ textarea {
     overflow: hidden;
 }
 
+/* На всякий случай — центрируем сами окна */
+.cameras-page .barrier-log-window,
+.cameras-page .camera-console-window {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .cameras-page .barrier-log-header,
 .cameras-page .camera-console-header {
     display: flex;
@@ -1631,8 +1715,16 @@ textarea {
 }
 
 /* ===== Страница «События» (стили в основном файле — без отдельного кэша) ===== */
-.events-page {
+.events-page.container {
+    max-width: none;
+}
+
+/* Явно центрируем ключевые блоки страницы событий */
+.events-page.container > * {
     max-width: 1200px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .visually-hidden {
