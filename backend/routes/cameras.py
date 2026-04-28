@@ -302,7 +302,7 @@ def _barrier_event_for_log(event: dict) -> dict:
 
     return {
         "action": action,
-        "label": "ОТКРЫТИЕ" if action == "open" else "ЗАКРЫТИЕ",
+        "label": "ОТКРЫТИЕ" if action == "open" else "ОТКАЗАНО",
         "gate": gate,
         "time": event_time,
         "detail": " · ".join(x for x in (region, place, client_place, phone) if x),

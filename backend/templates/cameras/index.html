@@ -497,7 +497,7 @@
         var time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         var date = d.toLocaleDateString('ru-RU');
         var isOpen = item.action === 'open';
-        var label = item.label || (isOpen ? 'ОТКРЫТИЕ' : 'ЗАКРЫТИЕ');
+        var label = item.label || (isOpen ? 'ОТКРЫТИЕ' : 'ОТКАЗАНО');
         var cls = isOpen ? 'barrier-log-open' : 'barrier-log-close';
         var detail = item.detail ? ' <span class="barrier-log-detail">(' + escHtml(item.detail) + ')</span>' : '';
 
