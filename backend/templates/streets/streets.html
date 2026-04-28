@@ -5,7 +5,9 @@
   <h1>Улицы</h1>
   <div class="actions-block">
     <div class="actions">
-      <a href="/streets/add" class="btn btn-outline">Добавить</a>
+      {% set add_url = "/streets/add" %}
+      {% set add_label = "Добавить улицу" %}
+      {% include "_add_menu.html" %}
       <a href="/streets/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/streets" class="search-row">
@@ -38,7 +40,7 @@
               <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             </button>
             <div class="menu-content" onclick="event.stopPropagation()">
-              <a href="/streets/edit/{{ s['id'] }}" class="menu-item">Редактировать</a>
+              <a href="/streets/edit/{{ s['id'] }}" class="menu-item">Редактировать улицу</a>
               <form method="post" action="/streets/delete/{{ s['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
                 <button class="menu-item btn-delete-small" type="submit">Удалить</button>
               </form>

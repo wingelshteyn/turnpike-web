@@ -5,7 +5,9 @@
   <h1>Регионы</h1>
   <div class="actions-block">
     <div class="actions">
-      <a href="/regions/add" class="btn btn-outline">Добавить</a>
+      {% set add_url = "/regions/add" %}
+      {% set add_label = "Добавить регион" %}
+      {% include "_add_menu.html" %}
       <a href="/regions/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/regions" class="search-row">
@@ -36,7 +38,7 @@
               <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             </button>
             <div class="menu-content" onclick="event.stopPropagation()">
-              <a href="/regions/edit/{{ r['id'] }}" class="menu-item">Редактировать</a>
+              <a href="/regions/edit/{{ r['id'] }}" class="menu-item">Редактировать регион</a>
               <form method="post" action="/regions/delete/{{ r['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
                 <button class="menu-item btn-delete-small" type="submit">Удалить</button>
               </form>

@@ -63,10 +63,19 @@ document.addEventListener('DOMContentLoaded', function () {
         var rect = btn.getBoundingClientRect();
         var margin = 8;
         var menuWidth = 180;
-        var left = Math.max(margin, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - margin));
+        // Позиционируем справа от кнопки "...", а если не влезает — слева.
+        var preferredLeft = rect.right + margin;
+        var fallbackLeft = rect.left - menuWidth - margin;
+        var left = preferredLeft;
+        if (preferredLeft + menuWidth > window.innerWidth - margin) {
+            left = fallbackLeft;
+        }
+        left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
+
         menuContent.style.left = left + 'px';
         menuContent.style.right = 'auto';
-        menuContent.style.top = (rect.bottom + margin) + 'px';
+        // по верхнему краю кнопки, чтобы меню выглядело «справа от ...»
+        menuContent.style.top = Math.max(margin, rect.top) + 'px';
         menuContent.style.bottom = 'auto';
         requestAnimationFrame(function () {
             var menuRect = menuContent.getBoundingClientRect();

@@ -6,7 +6,9 @@
 
   <div class="actions-block">
     <div class="actions">
-      <a href="/clients/add" class="btn btn-outline">Добавить</a>
+      {% set add_url = "/clients/add" %}
+      {% set add_label = "Добавить клиента" %}
+      {% include "_add_menu.html" %}
       <a href="/clients/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/clients" class="search-row">
@@ -38,7 +40,7 @@
               <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             </button>
             <div class="menu-content" onclick="event.stopPropagation()">
-              <a href="/clients/edit/{{ c['id'] }}" class="menu-item">Редактировать</a>
+              <a href="/clients/edit/{{ c['id'] }}" class="menu-item">Редактировать клиента</a>
               <form method="post" action="/clients/delete/{{ c['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
                 <button class="menu-item btn-delete-small" type="submit">Удалить</button>
               </form>

@@ -5,7 +5,9 @@
   <h1>Города</h1>
   <div class="actions-block">
     <div class="actions">
-      <a href="/cities/add" class="btn btn-outline">Добавить</a>
+      {% set add_url = "/cities/add" %}
+      {% set add_label = "Добавить город" %}
+      {% include "_add_menu.html" %}
       <a href="/cities/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/cities" class="search-row">
@@ -33,7 +35,7 @@
               <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             </button>
             <div class="menu-content" onclick="event.stopPropagation()">
-              <a href="/cities/edit/{{ c['id'] }}" class="menu-item">Редактировать</a>
+              <a href="/cities/edit/{{ c['id'] }}" class="menu-item">Редактировать город</a>
               <form method="post" action="/cities/delete/{{ c['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
                 <button class="menu-item btn-delete-small" type="submit">Удалить</button>
               </form>

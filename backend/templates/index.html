@@ -6,7 +6,9 @@
 
   <div class="actions-block">
     <div class="actions">
-      <a href="/partner-types/add" class="btn btn-outline">Добавить</a>
+      {% set add_url = "/partner-types/add" %}
+      {% set add_label = "Добавить тип партнёра" %}
+      {% include "_add_menu.html" %}
       <a href="/partner-types/deleted" class="btn btn-outline">Показать удалённые</a>
     </div>
     <form method="get" action="/partner-types/" class="search-row">
@@ -48,7 +50,7 @@
             <div class="menu-content" onclick="event.stopPropagation()">
               <a href="/partner-types/edit/{{ p['id'] }}" class="menu-item">
                 <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75l11-11.04-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                Редактировать
+                Редактировать тип партнёра
               </a>
               <form method="post" action="/partner-types/delete/{{ p['id'] }}" onsubmit="return confirm('Удалить?')" class="inline">
                 <button class="menu-item btn-delete-small" type="submit">

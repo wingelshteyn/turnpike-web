@@ -1,0 +1,18 @@
+{# Glass dropdown for "Add ..." action.
+   Usage:
+     {% set add_url = "/streets/add" %}
+     {% set add_label = "Добавить улицу" %}
+     {% include "_add_menu.html" %}
+#}
+<div class="action-menu add-action-menu">
+  <button class="btn btn-outline" type="button" title="{{ add_label or 'Добавить' }}">
+    Добавить
+    <span aria-hidden="true" style="margin-left:6px; opacity:.85">+</span>
+  </button>
+  <div class="menu-content" onclick="event.stopPropagation()">
+    <a href="{{ add_url }}" class="menu-item">
+      {{ add_label or "Добавить" }}
+    </a>
+  </div>
+</div>
+

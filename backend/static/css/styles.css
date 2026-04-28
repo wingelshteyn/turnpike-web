@@ -914,13 +914,23 @@ input[type="search"]:focus-visible {
 .menu-content {
     display: none;
     position: fixed;
-    background: var(--bg-medium);
+    /* более прозрачное стекло для меню действий */
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 255, 255, 0.03) 48%,
+            rgba(0, 0, 0, 0.06) 100%
+        ),
+        rgba(6, 8, 12, 0.14);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-sm);
     min-width: 180px;
     box-shadow: var(--shadow-lg);
     z-index: 10000;
     overflow: hidden;
+    backdrop-filter: blur(16px) saturate(1.08);
+    -webkit-backdrop-filter: blur(16px) saturate(1.08);
 }
 
 .action-menu.open .menu-content {
@@ -1605,6 +1615,8 @@ textarea {
 .cameras-page .camera-console-body {
     padding: 12px 16px 16px;
     background: #0d1117;
+    /* чтобы окно камер занимало почти пол страницы */
+    min-height: 44vh;
 }
 
 .cameras-page .barrier-log-empty {
