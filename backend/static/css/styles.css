@@ -1543,6 +1543,10 @@ textarea {
     color: #f85149;
 }
 
+.cameras-page .barrier-log-detail {
+    color: rgba(201, 209, 217, 0.58);
+}
+
 .cameras-page .barrier-log-console::-webkit-scrollbar {
     width: 8px;
 }

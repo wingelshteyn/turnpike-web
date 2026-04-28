@@ -479,28 +479,82 @@
     var logClearBtn = document.getElementById('barrierLogClear');
 
     function barrierLog(action, gateName) {
-        logEmpty.style.display = 'none';
         var now = new Date();
-        var time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        var date = now.toLocaleDateString('ru-RU');
-        var isOpen = action === 'open';
-        var label = isOpen ? 'ОТКРЫТИЕ' : 'ЗАКРЫТИЕ';
+        var entry = createBarrierLogEntry({
+            action: action,
+            gate: gateName,
+            time: now.toISOString()
+        });
+        logEmpty.style.display = 'none';
+        logBody.insertBefore(entry, logBody.firstChild);
+        trimBarrierLog();
+    }
+
+    function createBarrierLogEntry(item) {
+        var d = item.time ? new Date(item.time) : new Date();
+        if (Number.isNaN(d.getTime())) d = new Date();
+
+        var time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        var date = d.toLocaleDateString('ru-RU');
+        var isOpen = item.action === 'open';
+        var label = item.label || (isOpen ? 'ОТКРЫТИЕ' : 'ЗАКРЫТИЕ');
         var cls = isOpen ? 'barrier-log-open' : 'barrier-log-close';
+        var detail = item.detail ? ' <span class="barrier-log-detail">(' + escHtml(item.detail) + ')</span>' : '';
 
         var entry = document.createElement('div');
         entry.className = 'barrier-log-line ' + cls;
         entry.innerHTML =
             '<span class="barrier-log-prompt">&gt;</span> ' +
             '[' + date + ' ' + time + '] ' +
-            '<span class="barrier-log-badge ' + cls + '">' + label + '</span> ' +
-            escHtml(gateName);
+            '<span class="barrier-log-badge ' + cls + '">' + escHtml(label) + '</span> ' +
+            escHtml(item.gate || 'ворота') +
+            detail;
+        return entry;
+    }
 
-        logBody.insertBefore(entry, logBody.firstChild);
-
+    function trimBarrierLog() {
         var lines = logBody.querySelectorAll('.barrier-log-line');
         for (var i = 100; i < lines.length; i++) {
             lines[i].remove();
         }
+    }
+
+    function renderBarrierEvents(items) {
+        logBody.innerHTML = '';
+        logBody.appendChild(logEmpty);
+
+        if (!items || !items.length) {
+            logEmpty.textContent = '> Нет реальных событий ворот за выбранный период';
+            logEmpty.style.display = '';
+            return;
+        }
+
+        logEmpty.style.display = 'none';
+        items.forEach(function (item) {
+            logBody.appendChild(createBarrierLogEntry(item));
+        });
+        trimBarrierLog();
+    }
+
+    function loadBarrierEvents() {
+        fetch('/cameras/api/barrier-events?limit=100', {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        })
+            .then(function (resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+            })
+            .then(function (data) {
+                if (!data.success) throw new Error(data.error || 'Ошибка загрузки событий');
+                renderBarrierEvents(data.items || []);
+            })
+            .catch(function (err) {
+                logBody.innerHTML = '';
+                logBody.appendChild(logEmpty);
+                logEmpty.textContent = '> Ошибка загрузки реальных событий: ' + err.message;
+                logEmpty.style.display = '';
+            });
     }
 
     logClearBtn.addEventListener('click', function () {
@@ -510,41 +564,11 @@
         empty.style.display = '';
     });
 
-    // stub entries
-    (function () {
-        var stubGates = ['Въезд А', 'Въезд Б', 'Выезд А'];
-        var now = Date.now();
-        var stubs = [
-            { action: 'open',  gate: stubGates[0], offset: -3600000 },
-            { action: 'close', gate: stubGates[0], offset: -3595000 },
-            { action: 'open',  gate: stubGates[1], offset: -1800000 },
-            { action: 'close', gate: stubGates[1], offset: -1795000 },
-            { action: 'open',  gate: stubGates[2], offset: -600000 },
-            { action: 'close', gate: stubGates[2], offset: -595000 },
-        ];
-        stubs.forEach(function (s) {
-            logEmpty.style.display = 'none';
-            var d = new Date(now + s.offset);
-            var time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            var date = d.toLocaleDateString('ru-RU');
-            var isOpen = s.action === 'open';
-            var label = isOpen ? 'ОТКРЫТИЕ' : 'ЗАКРЫТИЕ';
-            var cls = isOpen ? 'barrier-log-open' : 'barrier-log-close';
-
-            var entry = document.createElement('div');
-            entry.className = 'barrier-log-line ' + cls;
-            entry.innerHTML =
-                '<span class="barrier-log-prompt">&gt;</span> ' +
-                '[' + date + ' ' + time + '] ' +
-                '<span class="barrier-log-badge ' + cls + '">' + label + '</span> ' +
-                escHtml(s.gate);
-            logBody.appendChild(entry);
-        });
-    })();
-
     // ─── Init ───────────────────────────────────────────────────────────
     refreshRate = parseInt(refreshSelect.value, 10) || 0;
     setLayout('1x1');
+    loadBarrierEvents();
+    setInterval(loadBarrierEvents, 60000);
 
 })();
 </script>

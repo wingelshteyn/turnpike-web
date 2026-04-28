@@ -16,10 +16,12 @@ import threading
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 
+from ..api.event import EventAPI
 from ..dependencies import template_ctx, templates
 
 os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
@@ -279,6 +281,64 @@ async def _generate_mjpeg(rtsp_url: str):
 @router.get("/api/list")
 async def api_cameras_list():
     return JSONResponse([{"id": c["id"], "name": c["name"]} for c in CAMERAS])
+
+
+def _barrier_action_from_event(event: dict) -> str:
+    """Преобразовать результат события API в действие журнала шлагбаумов."""
+    result = event.get("Event_Result")
+    if result in (1, "1", True):
+        return "open"
+    return "close"
+
+
+def _barrier_event_for_log(event: dict) -> dict:
+    action = _barrier_action_from_event(event)
+    event_time = event.get("Event_Time") or ""
+    gate = event.get("Equipment_Name") or event.get("Equipment_Type") or "ворота"
+    region = event.get("Region_Name") or ""
+    place = event.get("Region_Place") or ""
+    client_place = event.get("Client_Place") or ""
+    phone = event.get("Event_Phone") or ""
+
+    return {
+        "action": action,
+        "label": "ОТКРЫТИЕ" if action == "open" else "ЗАКРЫТИЕ",
+        "gate": gate,
+        "time": event_time,
+        "detail": " · ".join(x for x in (region, place, client_place, phone) if x),
+    }
+
+
+@router.get("/api/barrier-events")
+async def api_barrier_events(
+    date1: str | None = Query(None, description="Начальная дата YYYY-MM-DD"),
+    date2: str | None = Query(None, description="Конечная дата YYYY-MM-DD"),
+    limit: int = Query(50, ge=1, le=500),
+    sample: str | None = Query(None, description="Поиск по телефону/номеру"),
+):
+    """Реальные события ворот для журнала шлагбаумов на странице камер."""
+    if not date2:
+        date2 = datetime.now().strftime("%Y-%m-%d")
+    if not date1:
+        date1 = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+
+    try:
+        async with EventAPI() as api:
+            events = await api.list_events(date1=date1, date2=date2, limit=limit, sample=sample)
+    except Exception as exc:
+        return JSONResponse(
+            {"success": False, "error": f"Не удалось загрузить события: {exc}", "items": []},
+            status_code=502,
+        )
+
+    items = [
+        _barrier_event_for_log(e)
+        for e in events
+        if str(e.get("Equipment_Code") or "").lower() == "gate"
+        or "ворот" in str(e.get("Equipment_Type") or "").lower()
+        or "ворот" in str(e.get("Equipment_Name") or "").lower()
+    ]
+    return JSONResponse({"success": True, "items": items[:limit]})
 
 
 @router.get("/api/{cam_id}/snapshot")
